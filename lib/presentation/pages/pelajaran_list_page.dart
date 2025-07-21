@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/kelas.dart';
+import '../widgets/pelinus_app_bar.dart';
 import 'pelajaran_detail_page.dart';
 
 class PelajaranListPage extends ConsumerWidget {
@@ -15,9 +16,9 @@ class PelajaranListPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Kelas ${kelas.nomorKelas}'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      appBar: PelinusAppBar(
+        title: 'Kelas ${kelas.nomorKelas}',
+        showSyncButton: false, // Tidak ada sync button di halaman ini
       ),
       body: kelas.pelajaran.isEmpty
           ? _buildEmptyState(context)

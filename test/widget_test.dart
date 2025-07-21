@@ -16,6 +16,6 @@ void main() {
     await tester.pumpWidget(ProviderScope(child: MyApp()));
 
     // Verify that our counter starts at 0.
-    expect(find.text('Pelinus Siswa'), findsOneWidget);
+    expect(find.text('Pelinus Mengajar'), findsOneWidget);
   });
 }

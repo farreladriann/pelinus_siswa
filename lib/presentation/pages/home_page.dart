@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/kelas_provider.dart';
 import '../providers/sync_timer_provider.dart';
+import '../widgets/pelinus_app_bar.dart';
 import 'pelajaran_list_page.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -32,26 +33,10 @@ class _HomePageState extends ConsumerState<HomePage> {
     // Silent error handling - tidak menampilkan error di UI
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Pelinus Siswa'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: [
-          IconButton(
-            icon: kelasState.isSyncing 
-                ? SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Icon(Icons.sync),
-            onPressed: kelasState.isSyncing 
-                ? null 
-                : () {
-                    ref.read(kelasProvider.notifier).performSync();
-                  },
-            tooltip: 'Sinkronisasi Manual',
-          ),
-        ],
+      appBar: PelinusAppBar(
+        title: 'Pelinus Mengajar',
+        showBackButton: false,
+        showSyncButton: true, // Hanya di home page yang menampilkan sync button
       ),
       body: RefreshIndicator(
         onRefresh: () async {

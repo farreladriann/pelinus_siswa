@@ -1,5 +1,5 @@
 class AppConstants {
-  static const String appName = 'Pelinus Siswa';
+  static const String appName = 'Pelinus Mengajar';
   static const String baseUrl = 'https://pelinus.vercel.app';
   static const String databaseName = 'pelinus_siswa.db';
   static const int databaseVersion = 1;

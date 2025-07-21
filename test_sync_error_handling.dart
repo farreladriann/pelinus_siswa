@@ -2,7 +2,7 @@
 import 'lib/data/models/kuis_model.dart';
 
 void main() {
-  print('🧪 Testing Enhanced Error Handling for Pelinus Siswa');
+  print('🧪 Testing Enhanced Error Handling for Pelinus Mengajar');
   print('=' * 60);
   
   // Test 1: Valid KuisModel parsing

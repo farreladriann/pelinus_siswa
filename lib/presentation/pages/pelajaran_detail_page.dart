@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/pelajaran.dart';
 import '../providers/pdf_provider.dart';
+import '../widgets/pelinus_app_bar.dart';
 import 'pdf_viewer_page.dart';
 
 class PelajaranDetailPage extends ConsumerStatefulWidget {
@@ -25,9 +26,9 @@ class _PelajaranDetailPageState extends ConsumerState<PelajaranDetailPage> {
     final pdfState = ref.watch(pdfProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.pelajaran.namaPelajaran),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      appBar: PelinusAppBar(
+        title: widget.pelajaran.namaPelajaran,
+        showSyncButton: false, // Tidak ada sync button di halaman ini
       ),
       body: Column(
         children: [

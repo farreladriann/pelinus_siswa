@@ -33,7 +33,7 @@ class PelinusAppBar extends ConsumerWidget implements PreferredSizeWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Image.asset(
-              'assets/images/rusabljr.png',
+              'assets/images/rusabljrbg.png',
               width: 32,
               height: 32,
               fit: BoxFit.cover,

@@ -35,3 +35,5 @@ flutter:
   assets:
     - assets/images/
     - assets/images/rusabljr.png
+    - assets/images/rusabljrbg.png
+    - assets/images/play_store_512.png

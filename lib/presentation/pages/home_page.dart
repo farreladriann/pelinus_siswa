@@ -45,18 +45,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
   }
 
-  void _showSuccessSnackBar(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final kelasState = ref.watch(kelasProvider);
@@ -70,13 +58,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         _showErrorSnackBar(current.error!);
       }
       
-      // Show success SnackBar jika sync berhasil
-      if (previous?.isSyncing == true && 
-          current.isSyncing == false && 
-          current.error == null &&
-          current.kelasList.isNotEmpty) {
-        _showSuccessSnackBar('Sinkronisasi berhasil!');
-      }
+      // Success sync - no notification needed
     });
 
     return Scaffold(
@@ -212,28 +194,6 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
           ),
         
-        // Status info
-        Container(
-          width: double.infinity,
-          padding: EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Total Kelas: ${kelasState.kelasList.length}',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              if (syncTimerState.lastSync != null) ...[
-                SizedBox(height: 4),
-                Text(
-                  'Terakhir disinkronisasi: ${_formatDateTime(syncTimerState.lastSync!)}',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ],
-          ),
-        ),
-
         // Kelas list
         Expanded(
           child: ListView.builder(
@@ -271,9 +231,5 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
       ],
     );
-  }
-
-  String _formatDateTime(DateTime dateTime) {
-    return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 }

@@ -57,26 +57,6 @@ class PelajaranListPage extends ConsumerWidget {
   Widget _buildPelajaranList(BuildContext context) {
     return Column(
       children: [
-        // Header info
-        Container(
-          width: double.infinity,
-          padding: EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Total Pelajaran: ${kelas.pelajaran.length}',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              SizedBox(height: 4),
-              Text(
-                'Pilih pelajaran untuk melihat kuis dan materi',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-          ),
-        ),
-
         // Pelajaran list
         Expanded(
           child: ListView.builder(

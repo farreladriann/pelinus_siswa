@@ -47,9 +47,10 @@ class PdfNotifier extends StateNotifier<PdfState> {
         isLoading: false,
       );
     } catch (e) {
+      // Silent error handling - tidak menampilkan error di UI
       state = state.copyWith(
         isLoading: false,
-        error: e.toString(),
+        pdfFile: null,
       );
     }
   }

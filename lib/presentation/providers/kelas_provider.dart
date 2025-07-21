@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/kelas.dart';
 import '../../domain/usecases/get_cached_data.dart';
 import '../../domain/usecases/sync_data.dart';
-import '../../core/error/exceptions.dart';
 import 'app_providers.dart';
 
 // State classes
@@ -60,20 +59,10 @@ class KelasNotifier extends StateNotifier<KelasState> {
     } catch (e) {
       print('❌ Error loading cached data: $e');
       
-      String userFriendlyError;
-      if (e is ServerException) {
-        userFriendlyError = 'Gagal memuat data: ${e.message}';
-      } else if (e is NetworkException) {
-        userFriendlyError = 'Tidak ada koneksi internet. Periksa jaringan Anda.';
-      } else if (e.toString().contains('database')) {
-        userFriendlyError = 'Terjadi kesalahan pada penyimpanan data lokal';
-      } else {
-        userFriendlyError = 'Gagal memuat data: ${e.toString()}';
-      }
-      
+      // Silent error - tidak menampilkan error di UI
       state = state.copyWith(
         isLoading: false,
-        error: userFriendlyError,
+        kelasList: [], // Keep empty list instead of showing error
       );
     }
   }
@@ -97,32 +86,21 @@ class KelasNotifier extends StateNotifier<KelasState> {
     } catch (e) {
       print('❌ Sync error: $e');
       
-      String errorMessage;
-      if (e is NetworkException) {
-        errorMessage = 'Tidak ada koneksi internet. Pastikan Anda terhubung ke jaringan.';
-      } else if (e is ServerException) {
-        final serverError = e.message;
-        if (serverError.contains('timeout')) {
-          errorMessage = 'Koneksi ke server terputus. Coba lagi dalam beberapa saat.';
-        } else if (serverError.contains('parse') || serverError.contains('format')) {
-          errorMessage = 'Data dari server tidak valid. Silakan laporkan masalah ini.';
-        } else if (serverError.contains('HTTP 5')) {
-          errorMessage = 'Server sedang bermasalah. Coba lagi nanti.';
-        } else if (serverError.contains('HTTP 4')) {
-          errorMessage = 'Permintaan tidak valid. Periksa versi aplikasi Anda.';
-        } else {
-          errorMessage = 'Terjadi kesalahan pada server: $serverError';
-        }
-      } else if (e.toString().contains('database') || e.toString().contains('save')) {
-        errorMessage = 'Gagal menyimpan data ke penyimpanan lokal. Pastikan ada ruang penyimpanan yang cukup.';
-      } else {
-        errorMessage = 'Sinkronisasi gagal: ${e.toString()}';
+      // Silent error - reload cached data instead of showing error
+      try {
+        final kelasList = await getCachedData();
+        print('✅ Fallback to cached data: ${kelasList.length} kelas loaded');
+        state = state.copyWith(
+          kelasList: kelasList,
+          isSyncing: false,
+        );
+      } catch (cacheError) {
+        print('❌ Cache error: $cacheError');
+        state = state.copyWith(
+          isSyncing: false,
+          kelasList: [], // Keep empty list instead of showing error
+        );
       }
-      
-      state = state.copyWith(
-        isSyncing: false,
-        error: errorMessage,
-      );
     }
   }
 

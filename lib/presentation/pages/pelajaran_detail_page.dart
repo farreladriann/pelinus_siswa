@@ -321,13 +321,7 @@ class _PelajaranDetailPageState extends ConsumerState<PelajaranDetailPage> {
           ),
         ),
       );
-    } else if (pdfState.error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal membuka PDF: ${pdfState.error}'),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
+    // Silent error handling - tidak menampilkan error SnackBar
   }
 }

@@ -13,8 +13,6 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-  String? _lastError;
-
   @override
   void initState() {
     super.initState();
@@ -26,40 +24,12 @@ class _HomePageState extends ConsumerState<HomePage> {
     });
   }
 
-  void _showErrorSnackBar(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 5),
-          action: SnackBarAction(
-            label: 'Tutup',
-            textColor: Colors.white,
-            onPressed: () {
-              ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            },
-          ),
-        ),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final kelasState = ref.watch(kelasProvider);
     final syncTimerState = ref.watch(syncTimerProvider);
 
-    // Listen untuk perubahan error dan show SnackBar
-    ref.listen<KelasState>(kelasProvider, (previous, current) {
-      // Show error SnackBar jika ada error baru
-      if (current.error != null && current.error != _lastError) {
-        _lastError = current.error;
-        _showErrorSnackBar(current.error!);
-      }
-      
-      // Success sync - no notification needed
-    });
+    // Silent error handling - tidak menampilkan error di UI
 
     return Scaffold(
       appBar: AppBar(
@@ -106,34 +76,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       );
     }
 
-    if (kelasState.error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red,
-            ),
-            SizedBox(height: 16),
-            Text(
-              kelasState.error!,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.red),
-            ),
-            SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                ref.read(kelasProvider.notifier).clearError();
-                ref.read(kelasProvider.notifier).loadCachedData();
-              },
-              child: Text('Coba Lagi'),
-            ),
-          ],
-        ),
-      );
-    }
+    // Silent error handling - tidak menampilkan error state
 
     if (kelasState.kelasList.isEmpty) {
       return Center(

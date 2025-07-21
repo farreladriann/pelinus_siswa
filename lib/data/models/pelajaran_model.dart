@@ -10,13 +10,33 @@ class PelajaranModel extends Pelajaran {
   });
 
   factory PelajaranModel.fromJson(Map<String, dynamic> json) {
-    return PelajaranModel(
-      idPelajaran: json['idPelajaran'] as String,
-      namaPelajaran: json['namaPelajaran'] as String,
-      kuis: (json['kuis'] as List<dynamic>)
-          .map((e) => KuisModel.fromJson(e as Map<String, dynamic>))
-          .toList(),
-    );
+    try {
+      return PelajaranModel(
+        idPelajaran: json['idPelajaran']?.toString() ?? '',
+        namaPelajaran: json['namaPelajaran']?.toString() ?? 'Unknown',
+        kuis: (json['kuis'] as List<dynamic>?)
+            ?.map((e) {
+              try {
+                return KuisModel.fromJson(e as Map<String, dynamic>);
+              } catch (error) {
+                print('Error parsing kuis in PelajaranModel: $error');
+                return null;
+              }
+            })
+            .where((e) => e != null)
+            .cast<KuisModel>()
+            .toList() ?? [],
+      );
+    } catch (error) {
+      print('Error parsing PelajaranModel: $error');
+      print('JSON data: $json');
+      // Return default model jika ada error
+      return PelajaranModel(
+        idPelajaran: '',
+        namaPelajaran: 'Invalid Pelajaran Data',
+        kuis: [],
+      );
+    }
   }
 
   Map<String, dynamic> toJson() {

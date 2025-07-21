@@ -11,11 +11,20 @@ class KelasModel extends Kelas {
 
   factory KelasModel.fromJson(Map<String, dynamic> json) {
     return KelasModel(
-      id: json['id'] as String,
-      nomorKelas: json['nomorKelas'] as String,
-      pelajaran: (json['pelajaran'] as List<dynamic>)
-          .map((e) => PelajaranModel.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      id: json['id']?.toString() ?? '',
+      nomorKelas: json['nomorKelas']?.toString() ?? 'Unknown',
+      pelajaran: (json['pelajaran'] as List<dynamic>?)
+          ?.map((e) {
+            try {
+              return PelajaranModel.fromJson(e as Map<String, dynamic>);
+            } catch (error) {
+              print('Error parsing pelajaran in KelasModel: $error');
+              return null;
+            }
+          })
+          .where((e) => e != null)
+          .cast<PelajaranModel>()
+          .toList() ?? [],
     );
   }
   

@@ -209,47 +209,123 @@ class DatabaseHelper {
   }
 
   Future<void> saveAllData(List<Kelas> kelasList) async {
-    final db = await database;
-    await db.transaction((txn) async {
-      // Hapus semua data lama
-      await txn.delete('kuis');
-      await txn.delete('pelajaran');
-      await txn.delete('kelas');
+    try {
+      print('🔄 Starting saveAllData with ${kelasList.length} kelas');
+      final db = await database;
       
-      // Simpan data baru
-      for (var kelas in kelasList) {
-        final kelasModel = KelasModel.fromEntity(kelas);
-        await txn.insert(
-          'kelas',
-          {
-            'id': kelasModel.id,
-            'nomorKelas': kelasModel.nomorKelas,
-          },
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
+      await db.transaction((txn) async {
+        print('📊 Transaction started - clearing old data');
         
-        for (var pelajaran in kelas.pelajaran) {
-          final pelajaranModel = PelajaranModel.fromEntity(pelajaran);
-          await txn.insert(
-            'pelajaran',
-            {
-              'idPelajaran': pelajaranModel.idPelajaran,
-              'namaPelajaran': pelajaranModel.namaPelajaran,
-              'kelasId': kelas.id,
-            },
-            conflictAlgorithm: ConflictAlgorithm.replace,
-          );
-          
-          for (var kuis in pelajaran.kuis) {
-            final kuisModel = KuisModel.fromEntity(kuis);
+        // Hapus semua data lama dengan error handling
+        try {
+          await txn.delete('kuis');
+          await txn.delete('pelajaran');
+          await txn.delete('kelas');
+          print('✅ Successfully cleared old data');
+        } catch (clearError) {
+          print('❌ Error clearing old data: $clearError');
+          throw Exception('Failed to clear old data: $clearError');
+        }
+        
+        int kelasCount = 0, pelajaranCount = 0, kuisCount = 0;
+        int kelasErrors = 0, pelajaranErrors = 0, kuisErrors = 0;
+        
+        // Simpan data baru
+        for (var kelas in kelasList) {
+          try {
+            print('📝 Processing kelas: ${kelas.id} - ${kelas.nomorKelas}');
+            final kelasModel = KelasModel.fromEntity(kelas);
+            
             await txn.insert(
-              'kuis',
-              kuisModel.toJson(),
+              'kelas',
+              {
+                'id': kelasModel.id,
+                'nomorKelas': kelasModel.nomorKelas,
+              },
               conflictAlgorithm: ConflictAlgorithm.replace,
             );
+            kelasCount++;
+            
+            for (var pelajaran in kelas.pelajaran) {
+              try {
+                print('  📚 Processing pelajaran: ${pelajaran.idPelajaran} - ${pelajaran.namaPelajaran}');
+                final pelajaranModel = PelajaranModel.fromEntity(pelajaran);
+                
+                await txn.insert(
+                  'pelajaran',
+                  {
+                    'idPelajaran': pelajaranModel.idPelajaran,
+                    'namaPelajaran': pelajaranModel.namaPelajaran,
+                    'kelasId': kelas.id,
+                  },
+                  conflictAlgorithm: ConflictAlgorithm.replace,
+                );
+                pelajaranCount++;
+                
+                for (var kuis in pelajaran.kuis) {
+                  try {
+                    if (kuis.idKuis.isEmpty || kuis.soal.isEmpty) {
+                      print('    ⚠️ Skipping invalid kuis: id=${kuis.idKuis}, soal=${kuis.soal.length} chars');
+                      kuisErrors++;
+                      continue;
+                    }
+                    
+                    final kuisModel = KuisModel.fromEntity(kuis);
+                    final kuisData = kuisModel.toJson();
+                    kuisData['idPelajaran'] = pelajaran.idPelajaran; // Use correct column name
+                    
+                    await txn.insert(
+                      'kuis',
+                      kuisData,
+                      conflictAlgorithm: ConflictAlgorithm.replace,
+                    );
+                    kuisCount++;
+                    
+                  } catch (kuisError) {
+                    kuisErrors++;
+                    print('    ❌ Error saving kuis ${kuis.idKuis}: $kuisError');
+                    print('    📄 Kuis data: soal=${kuis.soal.length} chars, opsiA=${kuis.opsiA.length} chars');
+                    // Continue dengan kuis lainnya
+                  }
+                }
+                
+                print('    ✅ Processed ${pelajaran.kuis.length} kuis for ${pelajaran.namaPelajaran}');
+                
+              } catch (pelajaranError) {
+                pelajaranErrors++;
+                print('  ❌ Error saving pelajaran ${pelajaran.idPelajaran}: $pelajaranError');
+                print('  📄 Pelajaran data: nama=${pelajaran.namaPelajaran}, kuis count=${pelajaran.kuis.length}');
+                // Continue dengan pelajaran lainnya
+              }
+            }
+            
+            print('  ✅ Processed ${kelas.pelajaran.length} pelajaran for kelas ${kelas.nomorKelas}');
+            
+          } catch (kelasError) {
+            kelasErrors++;
+            print('❌ Error saving kelas ${kelas.id}: $kelasError');
+            print('📄 Kelas data: nomorKelas=${kelas.nomorKelas}, pelajaran count=${kelas.pelajaran.length}');
+            // Continue dengan kelas lainnya
           }
         }
-      }
-    });
+        
+        print('📊 Transaction completed:');
+        print('  ✅ Kelas saved: $kelasCount (errors: $kelasErrors)');
+        print('  ✅ Pelajaran saved: $pelajaranCount (errors: $pelajaranErrors)');
+        print('  ✅ Kuis saved: $kuisCount (errors: $kuisErrors)');
+        
+        if (kelasErrors > 0 || pelajaranErrors > 0 || kuisErrors > 0) {
+          print('⚠️ Some data had errors but transaction completed');
+        }
+        
+      });
+      
+      print('✅ Successfully completed saveAllData operation');
+      
+    } catch (error, stackTrace) {
+      print('🚨 Critical error in saveAllData: $error');
+      print('🔍 Stack trace: $stackTrace');
+      throw Exception('Failed to save data to database: $error');
+    }
   }
 }

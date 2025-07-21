@@ -36,38 +36,56 @@ class DataRepositoryImpl implements DataRepository {
     }
 
     try {
+      print('Starting data sync...');
+      
       // 1. Ambil data dari API
       final newKelasList = await apiService.getCachedData();
+      print('Received ${newKelasList.length} kelas from API');
+      
+      // Validasi data yang diterima
+      if (newKelasList.isEmpty) {
+        print('Warning: Received empty data from API');
+        return; // Jangan update jika tidak ada data
+      }
       
       // 2. Dapatkan semua ID pelajaran yang ada saat ini
       final currentPelajaranIds = await databaseHelper.getAllPelajaranIds();
+      print('Current pelajaran IDs: ${currentPelajaranIds.length}');
       
       // 3. Simpan data baru ke database (akan mengganti semua data lama)
       await databaseHelper.saveAllData(newKelasList);
+      print('Successfully saved data to database');
       
       // 4. Cari ID pelajaran baru yang perlu diunduh PDF-nya
       final newPelajaranIds = <String>[];
       for (var kelas in newKelasList) {
         for (var pelajaran in kelas.pelajaran) {
-          newPelajaranIds.add(pelajaran.idPelajaran);
+          if (pelajaran.idPelajaran.isNotEmpty) {
+            newPelajaranIds.add(pelajaran.idPelajaran);
+          }
         }
       }
+      print('New pelajaran IDs: ${newPelajaranIds.length}');
       
       // 5. Unduh PDF untuk pelajaran baru
       for (var kelas in newKelasList) {
         for (var pelajaran in kelas.pelajaran) {
+          if (pelajaran.idPelajaran.isEmpty) continue;
+          
           final pdfExists = await databaseHelper.getPdfFile(pelajaran.idPelajaran);
           
           if (pdfExists == null) {
             try {
+              print('Downloading PDF for: ${pelajaran.namaPelajaran}');
               final pdfFile = await apiService.downloadPdf(
                 pelajaran.idPelajaran,
                 pelajaran.namaPelajaran,
               );
               await databaseHelper.insertPdfFile(PdfFileModel.fromEntity(pdfFile));
-            } catch (e) {
-              // Log error for PDF download failure
-              // print('Failed to download PDF for ${pelajaran.namaPelajaran}: $e');
+              print('Successfully downloaded PDF for: ${pelajaran.namaPelajaran}');
+            } catch (pdfError) {
+              print('Failed to download PDF for ${pelajaran.namaPelajaran}: $pdfError');
+              // Continue dengan pelajaran lainnya, jangan stop sync
             }
           }
         }
@@ -78,20 +96,30 @@ class DataRepositoryImpl implements DataRepository {
           .where((id) => !newPelajaranIds.contains(id))
           .toList();
       
+      print('Removing ${removedPelajaranIds.length} obsolete PDFs');
       for (var idPelajaran in removedPelajaranIds) {
-        final pdfFile = await databaseHelper.getPdfFile(idPelajaran);
-        if (pdfFile != null) {
-          // Hapus file PDF dari storage
-          final file = File(pdfFile.filePath);
-          if (await file.exists()) {
-            await file.delete();
+        try {
+          final pdfFile = await databaseHelper.getPdfFile(idPelajaran);
+          if (pdfFile != null) {
+            // Hapus file PDF dari storage
+            final file = File(pdfFile.filePath);
+            if (await file.exists()) {
+              await file.delete();
+            }
+            // Hapus record dari database
+            await databaseHelper.deletePdfFile(idPelajaran);
+            print('Removed PDF for pelajaran: $idPelajaran');
           }
-          // Hapus record dari database
-          await databaseHelper.deletePdfFile(idPelajaran);
+        } catch (deleteError) {
+          print('Error deleting PDF for pelajaran $idPelajaran: $deleteError');
+          // Continue dengan yang lainnya
         }
       }
       
+      print('Data sync completed successfully');
+      
     } catch (e) {
+      print('Error during sync: $e');
       if (e is NetworkException || e is ServerException) {
         rethrow;
       }

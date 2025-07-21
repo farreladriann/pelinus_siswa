@@ -13,6 +13,8 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
+  String? _lastError;
+
   @override
   void initState() {
     super.initState();
@@ -24,10 +26,58 @@ class _HomePageState extends ConsumerState<HomePage> {
     });
   }
 
+  void _showErrorSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 5),
+          action: SnackBarAction(
+            label: 'Tutup',
+            textColor: Colors.white,
+            onPressed: () {
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            },
+          ),
+        ),
+      );
+    }
+  }
+
+  void _showSuccessSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final kelasState = ref.watch(kelasProvider);
     final syncTimerState = ref.watch(syncTimerProvider);
+
+    // Listen untuk perubahan error dan show SnackBar
+    ref.listen<KelasState>(kelasProvider, (previous, current) {
+      // Show error SnackBar jika ada error baru
+      if (current.error != null && current.error != _lastError) {
+        _lastError = current.error;
+        _showErrorSnackBar(current.error!);
+      }
+      
+      // Show success SnackBar jika sync berhasil
+      if (previous?.isSyncing == true && 
+          current.isSyncing == false && 
+          current.error == null &&
+          current.kelasList.isNotEmpty) {
+        _showSuccessSnackBar('Sinkronisasi berhasil!');
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(

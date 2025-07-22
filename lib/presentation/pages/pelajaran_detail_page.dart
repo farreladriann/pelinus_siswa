@@ -6,6 +6,7 @@ import '../../domain/entities/quiz_result.dart';
 import '../providers/pdf_provider.dart';
 import '../providers/quiz_provider.dart';
 import '../widgets/pelinus_app_bar.dart';
+import '../themes/app_colors.dart';
 import 'pdf_viewer_page.dart';
 import 'quiz_page.dart';
 
@@ -43,137 +44,298 @@ class _PelajaranDetailPageState extends ConsumerState<PelajaranDetailPage> {
     return Scaffold(
       appBar: PelinusAppBar(
         title: widget.pelajaran.namaPelajaran,
-        showSyncButton: false, // Tidak ada sync button di halaman ini
+        showSyncButton: false,
       ),
+      backgroundColor: AppColors.background,
       body: Column(
         children: [
-          // Header info dan tombol PDF
+          // Enhanced header section
           Container(
             width: double.infinity,
-            padding: EdgeInsets.all(16),
+            margin: EdgeInsets.all(16),
+            padding: EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: AppColors.primaryGradient,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.3),
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
+                    Container(
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.school,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             widget.pelajaran.namaPelajaran,
-                            style: Theme.of(context).textTheme.headlineSmall,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
                           SizedBox(height: 4),
                           Text(
                             'Kelas ${widget.kelasNomor}',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            '${widget.pelajaran.kuis.length} kuis tersedia',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          if (progress != null) ...[
-                            SizedBox(height: 4),
-                            Text(
-                              'Progress: ${progress.completedKuis}/${progress.totalKuis} kuis (${progress.score.toStringAsFixed(1)}%)',
-                              style: TextStyle(
-                                color: progress.isCompleted ? Colors.green : Colors.orange,
-                                fontWeight: FontWeight.w500,
-                              ),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white.withOpacity(0.9),
                             ),
-                          ],
+                          ),
                         ],
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 16),
+                SizedBox(height: 20),
                 
-                // Tombol Lihat Materi PDF
-                SizedBox(
+                // Stats row
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              '${widget.pelajaran.kuis.length}',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            Text(
+                              'Kuis Tersedia',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.white.withOpacity(0.8),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (progress != null) ...[
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                '${progress.completedKuis}',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              Text(
+                                'Terjawab',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white.withOpacity(0.8),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                '${progress.score.toStringAsFixed(0)}%',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              Text(
+                                'Skor',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white.withOpacity(0.8),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                
+                SizedBox(height: 20),
+                
+                // Enhanced PDF button
+                Container(
                   width: double.infinity,
+                  height: 50,
                   child: ElevatedButton.icon(
-                    onPressed: pdfState.isLoading 
-                        ? null 
-                        : () => _openPdfViewer(),
-                    icon: pdfState.isLoading 
+                    onPressed: pdfState.isLoading ? null : () => _openPdfViewer(),
+                    icon: pdfState.isLoading
                         ? SizedBox(
                             width: 16,
                             height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                            ),
                           )
-                        : Icon(Icons.picture_as_pdf),
-                    label: Text(pdfState.isLoading 
-                        ? 'Memuat PDF...' 
-                        : 'Lihat Materi PDF'),
+                        : Icon(Icons.picture_as_pdf, size: 20),
+                    label: Text(
+                      pdfState.isLoading ? 'Memuat PDF...' : 'Lihat Materi PDF',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
+                    ),
                     style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.all(16),
+                      backgroundColor: Colors.white,
+                      foregroundColor: AppColors.primary,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ),
-                
-                SizedBox(height: 12),
-                
-                // Tombol Mulai Kuis
+              ],
+            ),
+          ),
+          
+          // Action buttons section
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              children: [
+                // Quiz button
                 if (widget.pelajaran.kuis.isNotEmpty)
-                  SizedBox(
+                  Container(
                     width: double.infinity,
+                    height: 50,
+                    margin: EdgeInsets.only(bottom: 12),
                     child: ElevatedButton.icon(
                       onPressed: () => _startQuiz(),
-                      icon: Icon(Icons.quiz),
-                      label: Text(progress != null && progress.completedKuis > 0 
-                          ? 'Lanjutkan Kuis' 
-                          : 'Mulai Kuis'),
+                      icon: Icon(Icons.quiz, size: 20),
+                      label: Text(
+                        progress != null && progress.completedKuis > 0 
+                            ? 'Lanjutkan Kuis' 
+                            : 'Mulai Kuis',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
-                        padding: EdgeInsets.all(16),
+                        foregroundColor: Colors.white,
+                        elevation: 2,
+                        shadowColor: Colors.green.withOpacity(0.3),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
                 
-                SizedBox(height: 12),
-                
-                // Tombol Reset Progress (hanya tampil jika ada progress)
+                // Reset button
                 if (progress != null && progress.completedKuis > 0)
-                  SizedBox(
+                  Container(
                     width: double.infinity,
+                    height: 50,
+                    margin: EdgeInsets.only(bottom: 12),
                     child: OutlinedButton.icon(
                       onPressed: quizState.isLoading ? null : () => _showResetDialog(),
-                      icon: Icon(Icons.refresh, color: Colors.red),
+                      icon: Icon(Icons.refresh, color: Colors.red, size: 20),
                       label: Text(
                         'Reset Semua Kuis',
-                        style: TextStyle(color: Colors.red),
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
                       ),
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: Colors.red),
-                        padding: EdgeInsets.all(16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
 
-                SizedBox(height: 12),
-
-                // Tombol Lihat Detail Progress (jika ada progress)
+                // Progress detail button
                 if (progress != null)
-                  SizedBox(
+                  Container(
                     width: double.infinity,
+                    height: 50,
+                    margin: EdgeInsets.only(bottom: 12),
                     child: OutlinedButton.icon(
                       onPressed: () => _showProgressDetail(progress),
-                      icon: Icon(Icons.analytics_outlined),
-                      label: Text('Lihat Detail Progress'),
+                      icon: Icon(Icons.analytics_outlined, size: 20),
+                      label: Text(
+                        'Lihat Detail Progress',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
                       style: OutlinedButton.styleFrom(
-                        padding: EdgeInsets.all(16),
+                        side: BorderSide(color: AppColors.primary),
+                        foregroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
 
+                // Error message
                 if (pdfState.error != null) ...[
-                  SizedBox(height: 8),
                   Container(
                     width: double.infinity,
                     padding: EdgeInsets.all(12),
+                    margin: EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
                       color: Colors.red.shade100,
                       borderRadius: BorderRadius.circular(8),
@@ -197,10 +359,7 @@ class _PelajaranDetailPageState extends ConsumerState<PelajaranDetailPage> {
             ),
           ),
 
-          // Divider untuk pemisah visual
-          Divider(),
-
-          // Spacer untuk mengisi ruang kosong
+          // Spacer
           Expanded(
             child: Container(),
           ),
@@ -230,76 +389,118 @@ class _PelajaranDetailPageState extends ConsumerState<PelajaranDetailPage> {
         ),
       );
     }
-    // Silent error handling - tidak menampilkan error SnackBar
   }
 
   void _showProgressDetail(PelajaranProgress progress) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.analytics_outlined, color: Theme.of(context).primaryColor),
-            SizedBox(width: 8),
-            Text('Detail Progress'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildProgressItem('Total Kuis', '${progress.totalKuis} soal'),
-            _buildProgressItem('Kuis Diselesaikan', '${progress.completedKuis}/${progress.totalKuis}'),
-            _buildProgressItem('Jawaban Benar', '${progress.correctAnswers}/${progress.completedKuis}'),
-            _buildProgressItem('Skor Akhir', '${progress.score.toStringAsFixed(1)}%'),
-            _buildProgressItem('Status', progress.isCompleted ? 'Selesai' : 'Belum Selesai'),
-            if (progress.lastAttemptAt != null)
-              _buildProgressItem(
-                'Terakhir Mengerjakan',
-                _formatDateTime(progress.lastAttemptAt!),
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.analytics_outlined, 
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Text(
+                    'Detail Progress',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
-            SizedBox(height: 16),
-            LinearProgressIndicator(
-              value: progress.totalKuis > 0 ? progress.completedKuis / progress.totalKuis : 0,
-              backgroundColor: Colors.grey.shade300,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                progress.isCompleted ? Colors.green : Theme.of(context).primaryColor,
-              ),
-            ),
-            SizedBox(height: 8),
-            Center(
-              child: Text(
-                '${((progress.completedKuis / progress.totalKuis) * 100).toStringAsFixed(1)}% selesai',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
+              SizedBox(height: 20),
+              _buildProgressItem('Total Kuis', '${progress.totalKuis} soal'),
+              _buildProgressItem('Kuis Diselesaikan', '${progress.completedKuis}/${progress.totalKuis}'),
+              _buildProgressItem('Jawaban Benar', '${progress.correctAnswers}/${progress.completedKuis}'),
+              _buildProgressItem('Skor Akhir', '${progress.score.toStringAsFixed(1)}%'),
+              _buildProgressItem('Status', progress.isCompleted ? 'Selesai' : 'Belum Selesai'),
+              if (progress.lastAttemptAt != null)
+                _buildProgressItem(
+                  'Terakhir Mengerjakan',
+                  _formatDateTime(progress.lastAttemptAt!),
+                ),
+              SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                height: 8,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(4),
+                  color: Colors.grey.shade200,
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progress.totalKuis > 0 ? progress.completedKuis / progress.totalKuis : 0,
+                    backgroundColor: Colors.transparent,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      progress.isCompleted ? Colors.green : AppColors.primary,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ],
+              SizedBox(height: 8),
+              Center(
+                child: Text(
+                  '${((progress.completedKuis / progress.totalKuis) * 100).toStringAsFixed(1)}% selesai',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ),
+              SizedBox(height: 24),
+              Row(
+                children: [
+                  if (progress.completedKuis > 0)
+                    Expanded(
+                      child: TextButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          _showResetDialog();
+                        },
+                        icon: Icon(Icons.refresh, color: Colors.red),
+                        label: Text('Reset', style: TextStyle(color: Colors.red)),
+                      ),
+                    ),
+                  if (progress.completedKuis > 0) SizedBox(width: 12),
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text('Tutup'),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _startQuiz();
+                      },
+                      child: Text(progress.completedKuis > 0 ? 'Lanjutkan' : 'Mulai Kuis'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-        actions: [
-          if (progress.completedKuis > 0)
-            TextButton.icon(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _showResetDialog();
-              },
-              icon: Icon(Icons.refresh, color: Colors.red),
-              label: Text('Reset', style: TextStyle(color: Colors.red)),
-            ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Tutup'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _startQuiz();
-            },
-            child: Text(progress.completedKuis > 0 ? 'Lanjutkan' : 'Mulai Kuis'),
-          ),
-        ],
       ),
     );
   }
@@ -311,18 +512,12 @@ class _PelajaranDetailPageState extends ConsumerState<PelajaranDetailPage> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            label,
-            style: TextStyle(
-              fontWeight: FontWeight.w500,
-              color: Colors.grey.shade700,
-            ),
+            label, 
+            style: TextStyle(color: Colors.grey.shade700),
           ),
           Text(
             value,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
+            style: TextStyle(fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -358,73 +553,99 @@ class _PelajaranDetailPageState extends ConsumerState<PelajaranDetailPage> {
   void _showResetDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.warning, color: Colors.orange),
-            SizedBox(width: 8),
-            Text('Reset Progress'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Apakah Anda yakin ingin mereset semua progress kuis untuk mata pelajaran ini?',
-              style: TextStyle(fontSize: 16),
-            ),
-            SizedBox(height: 12),
-            Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red.shade200),
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.warning,
+                  color: Colors.red,
+                  size: 32,
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              SizedBox(height: 16),
+              Text(
+                'Reset Progress',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 12),
+              Text(
+                'Apakah Anda yakin ingin mereset semua progress kuis untuk mata pelajaran ini?',
+                style: TextStyle(fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 12),
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tindakan ini akan:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red.shade800,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text('• Menghapus semua jawaban kuis'),
+                    Text('• Mereset skor menjadi 0'),
+                    Text('• Mereset progress menjadi 0'),
+                    SizedBox(height: 8),
+                    Text(
+                      'Tindakan ini tidak dapat dibatalkan!',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red.shade800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 20),
+              Row(
                 children: [
-                  Text(
-                    'Tindakan ini akan:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red.shade800,
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text('Batal'),
                     ),
                   ),
-                  SizedBox(height: 4),
-                  Text('• Menghapus semua jawaban kuis'),
-                  Text('• Mereset skor menjadi 0'),
-                  Text('• Mereset progress menjadi 0'),
-                  SizedBox(height: 8),
-                  Text(
-                    'Tindakan ini tidak dapat dibatalkan!',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red.shade800,
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _performReset();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                      ),
+                      child: Text('Reset'),
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _performReset();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
-            child: Text('Reset'),
-          ),
-        ],
       ),
     );
   }

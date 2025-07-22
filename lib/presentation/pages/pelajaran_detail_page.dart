@@ -458,7 +458,7 @@ class _PelajaranDetailPageState extends ConsumerState<PelajaranDetailPage> {
               SizedBox(height: 8),
               Center(
                 child: Text(
-                  '${((progress.completedKuis / progress.totalKuis) * 100).toStringAsFixed(1)}% selesai',
+                  '${progress.totalKuis > 0 ? ((progress.completedKuis / progress.totalKuis) * 100).toStringAsFixed(1) : '0.0'}% selesai',
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey.shade600,
@@ -496,28 +496,6 @@ class _PelajaranDetailPageState extends ConsumerState<PelajaranDetailPage> {
                       ),
                     ),
                   if (progress.completedKuis > 0) SizedBox(width: 8),
-                  Expanded(
-                    child: Container(
-                      height: 40,
-                      child: TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        style: TextButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: Text(
-                          'Tutup',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 8),
                   Expanded(
                     child: Container(
                       height: 40,

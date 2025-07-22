@@ -116,18 +116,20 @@ class _CircularProgressCardState extends State<CircularProgressCard>
                   Text(
                     '${progress.completedKuis}',
                     style: TextStyle(
-                      fontSize: widget.size * 0.25,
+                      fontSize: widget.size * 0.32, // Increased from 0.3 to 0.32 for better visibility
                       fontWeight: FontWeight.bold,
                       color: progressColor,
                     ),
+                    textAlign: TextAlign.center,
                   ),
                 if (widget.showLabel && !progress.isCompleted)
                   Text(
                     '/${progress.totalKuis}',
                     style: TextStyle(
-                      fontSize: widget.size * 0.15,
+                      fontSize: widget.size * 0.20, // Increased from 0.18 to 0.20 for better proportion
                       color: AppColors.textSecondary,
                     ),
+                    textAlign: TextAlign.center,
                   ),
               ],
             ),

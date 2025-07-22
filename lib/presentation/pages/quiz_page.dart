@@ -882,6 +882,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                                 width: 60,
                                 height: 60,
                                 child: Stack(
+                                  alignment: Alignment.center,
                                   children: [
                                     CircularProgressIndicator(
                                       value: progress.score / 100,
@@ -891,14 +892,12 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                                         _getScoreColor(progress.score),
                                       ),
                                     ),
-                                    Center(
-                                      child: Text(
-                                        '${progress.score.toStringAsFixed(0)}%',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: _getScoreColor(progress.score),
-                                        ),
+                                    Text(
+                                      '${progress.score.toStringAsFixed(0)}%',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: _getScoreColor(progress.score),
                                       ),
                                     ),
                                   ],
@@ -952,18 +951,22 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                                 side: BorderSide(color: AppColors.primary.withOpacity(0.3)),
                               ),
                             ),
-                            child: Text(
-                              'Lanjutkan',
-                              style: TextStyle(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w600,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'Lanjutkan',
+                                style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
                               ),
                             ),
                           ),
                         ),
                       ),
                     if (progress != null && progress.completedKuis > 0) ...[
-                      if (progress.completedKuis < progress.totalKuis) SizedBox(width: 12),
+                      if (progress.completedKuis < progress.totalKuis) SizedBox(width: 8),
                       Expanded(
                         child: Container(
                           height: 48,
@@ -972,12 +975,16 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                               Navigator.of(context).pop();
                               _showResetConfirmation();
                             },
-                            icon: Icon(Icons.refresh, color: Colors.orange, size: 18),
-                            label: Text(
-                              'Ulangi',
-                              style: TextStyle(
-                                color: Colors.orange,
-                                fontWeight: FontWeight.w600,
+                            icon: Icon(Icons.refresh, color: Colors.orange, size: 16),
+                            label: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'Ulangi',
+                                style: TextStyle(
+                                  color: Colors.orange,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
                               ),
                             ),
                             style: TextButton.styleFrom(
@@ -989,7 +996,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                           ),
                         ),
                       ),
-                      SizedBox(width: 12),
+                      SizedBox(width: 8),
                     ],
                     Expanded(
                       child: Container(
@@ -1008,9 +1015,13 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: Text(
-                            'Selesai',
-                            style: TextStyle(fontWeight: FontWeight.w600),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              'Selesai',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                              maxLines: 1,
+                            ),
                           ),
                         ),
                       ),

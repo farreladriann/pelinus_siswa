@@ -470,30 +470,76 @@ class _PelajaranDetailPageState extends ConsumerState<PelajaranDetailPage> {
                 children: [
                   if (progress.completedKuis > 0)
                     Expanded(
-                      child: TextButton.icon(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                          _showResetDialog();
-                        },
-                        icon: Icon(Icons.refresh, color: Colors.red),
-                        label: Text('Reset', style: TextStyle(color: Colors.red)),
+                      child: Container(
+                        height: 40,
+                        child: TextButton.icon(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            _showResetDialog();
+                          },
+                          icon: Icon(Icons.refresh, color: Colors.red, size: 16),
+                          label: Text(
+                            'Reset', 
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                          ),
+                          style: TextButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  if (progress.completedKuis > 0) SizedBox(width: 12),
+                  if (progress.completedKuis > 0) SizedBox(width: 8),
                   Expanded(
-                    child: TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Text('Tutup'),
+                    child: Container(
+                      height: 40,
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: TextButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Text(
+                          'Tutup',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                        ),
+                      ),
                     ),
                   ),
-                  SizedBox(width: 12),
+                  SizedBox(width: 8),
                   Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        _startQuiz();
-                      },
-                      child: Text(progress.completedKuis > 0 ? 'Lanjutkan' : 'Mulai Kuis'),
+                    child: Container(
+                      height: 40,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          _startQuiz();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Text(
+                          progress.completedKuis > 0 ? 'Lanjutkan' : 'Mulai Kuis',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                        ),
+                      ),
                     ),
                   ),
                 ],

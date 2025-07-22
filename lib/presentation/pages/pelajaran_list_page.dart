@@ -212,12 +212,16 @@ class _PelajaranListPageState extends ConsumerState<PelajaranListPage>
                         ),
                       ),
                       SizedBox(width: AppSizes.sm),
-                      Text(
-                        '${progress.completedKuis}/${progress.totalKuis}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textSecondary,
+                      Flexible(
+                        child: Text(
+                          '${progress.completedKuis}/${progress.totalKuis}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textSecondary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.right,
                         ),
                       ),
                     ],
@@ -227,42 +231,51 @@ class _PelajaranListPageState extends ConsumerState<PelajaranListPage>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       if (progress.completedKuis > 0) ...[
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: AppSizes.sm,
-                            vertical: AppSizes.xs,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _getScoreColor(progress.score).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                _getScoreIcon(progress.score),
-                                size: 12,
-                                color: _getScoreColor(progress.score),
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                'Skor: ${progress.score.toStringAsFixed(1)}%',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
+                        Flexible(
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppSizes.sm,
+                              vertical: AppSizes.xs,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _getScoreColor(progress.score).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  _getScoreIcon(progress.score),
+                                  size: 12,
                                   color: _getScoreColor(progress.score),
                                 ),
-                              ),
-                            ],
+                                SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    'Skor: ${progress.score.toStringAsFixed(1)}%',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                      color: _getScoreColor(progress.score),
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
                       if (progress.lastAttemptAt != null)
-                        Text(
-                          _formatDateTime(progress.lastAttemptAt!),
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: AppColors.textHint,
+                        Flexible(
+                          child: Text(
+                            _formatDateTime(progress.lastAttemptAt!),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: AppColors.textHint,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.right,
                           ),
                         ),
                     ],

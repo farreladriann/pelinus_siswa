@@ -1,7 +1,6 @@
 // lib/presentation/widgets/circular_progress_widget.dart
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
-import '../../domain/entities/quiz_result.dart';
 import '../themes/app_colors.dart';
 
 class CircularProgressRing extends StatefulWidget {
@@ -71,10 +70,12 @@ class _CircularProgressRingState extends State<CircularProgressRing>
                     child: Text(
                       widget.centerText!,
                       style: TextStyle(
-                        fontSize: widget.size * 0.15,
+                        fontSize: widget.size * 0.23, // Increased from 0.22 to 0.28 for better visibility
                         fontWeight: FontWeight.bold,
                         color: widget.color,
                       ),
+                      textAlign: TextAlign.center,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   )
                 : null,

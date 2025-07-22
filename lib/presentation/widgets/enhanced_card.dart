@@ -125,7 +125,10 @@ class PelajaranCard extends StatelessWidget {
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
+                        height: 1.2,
                       ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1, // Reduced from 2 to 1 to prevent layout issues
                     ),
                     SizedBox(height: AppSizes.xs),
                     Text(
@@ -133,12 +136,18 @@ class PelajaranCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 14,
                         color: AppColors.textSecondary,
+                        height: 1.1,
                       ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                   ],
                 ),
               ),
-              if (trailing != null) trailing!,
+              if (trailing != null) ...[
+                SizedBox(width: AppSizes.sm),
+                trailing!,
+              ],
             ],
           ),
           if (progressWidget != null) ...[

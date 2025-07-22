@@ -9,6 +9,7 @@ import '../../models/quiz_result_model.dart';
 import '../../../domain/entities/kelas.dart';
 import '../../../domain/entities/pdf_file.dart';
 import '../../../domain/entities/quiz_result.dart';
+import '../../../core/utils/logger.dart';
 
 class DatabaseHelper {
   static DatabaseHelper? _instance;
@@ -28,11 +29,11 @@ class DatabaseHelper {
       _database = await _initDatabase();
       return _database!;
     } catch (e) {
-      print('❌ Database initialization failed: $e');
+      AppLogger.error('Database initialization failed', e);
       
       // If database fails to initialize, try to reset it
       if (e.toString().contains('table') && e.toString().contains('already exists')) {
-        print('🔄 Attempting to reset corrupted database...');
+        AppLogger.info('Attempting to reset corrupted database...');
         await resetDatabase();
         _database = await _initDatabase();
         return _database!;
@@ -127,11 +128,11 @@ class DatabaseHelper {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    print('🔄 Database upgrade: $oldVersion -> $newVersion');
+    AppLogger.database('UPGRADE', 'Database upgrade: $oldVersion -> $newVersion');
     
     if (oldVersion < 2) {
       // Add new tables for quiz results and progress (use IF NOT EXISTS to avoid conflicts)
-      print('📝 Adding quiz_results table...');
+      AppLogger.database('UPGRADE', 'Adding quiz_results table...');
       await db.execute('''
         CREATE TABLE IF NOT EXISTS quiz_results (
           id TEXT PRIMARY KEY,
@@ -145,7 +146,7 @@ class DatabaseHelper {
         )
       ''');
 
-      print('📝 Adding pelajaran_progress table...');
+      AppLogger.database('UPGRADE', 'Adding pelajaran_progress table...');
       await db.execute('''
         CREATE TABLE IF NOT EXISTS pelajaran_progress (
           idPelajaran TEXT PRIMARY KEY,
@@ -162,7 +163,7 @@ class DatabaseHelper {
     
     if (oldVersion < 3) {
       // Version 3 fixes - ensure tables exist with IF NOT EXISTS
-      print('📝 Ensuring quiz tables exist for version 3...');
+      AppLogger.database('UPGRADE', 'Ensuring quiz tables exist for version 3...');
       await db.execute('''
         CREATE TABLE IF NOT EXISTS quiz_results (
           id TEXT PRIMARY KEY,
@@ -192,13 +193,13 @@ class DatabaseHelper {
     
     if (oldVersion < 4) {
       // Version 4 - Clean up orphaned quiz results after sync
-      print('📝 Adding cleanup for orphaned quiz results...');
+      AppLogger.database('UPGRADE', 'Adding cleanup for orphaned quiz results...');
       
       // This will be implemented in the saveAllData method
       // No schema changes needed, just logic improvements
     }
     
-    print('✅ Database upgrade completed');
+    AppLogger.database('UPGRADE', 'Database upgrade completed');
   }
 
   // Metode untuk Kelas
@@ -317,7 +318,7 @@ class DatabaseHelper {
       await txn.delete('kelas');
       await txn.delete('pdf_files');
     });
-    print('✅ All data cleared from database');
+    AppLogger.database('CLEAR', 'All data cleared from database');
   }
 
   // Method to completely reset database (for troubleshooting)
@@ -333,11 +334,11 @@ class DatabaseHelper {
       
       // Delete the database file
       await deleteDatabase(path);
-      print('✅ Database file deleted and will be recreated');
+      AppLogger.database('RESET', 'Database file deleted and will be recreated');
       
       // The database will be recreated on next access
     } catch (e) {
-      print('❌ Error resetting database: $e');
+      AppLogger.error('Error resetting database', e);
       rethrow;
     }
   }
@@ -359,20 +360,20 @@ class DatabaseHelper {
 
   Future<void> saveAllData(List<Kelas> kelasList) async {
     try {
-      print('🔄 Starting saveAllData with ${kelasList.length} kelas');
+      AppLogger.sync('Starting saveAllData with ${kelasList.length} kelas');
       final db = await database;
       
       await db.transaction((txn) async {
-        print('📊 Transaction started - clearing old data');
+        AppLogger.database('TRANSACTION', 'Transaction started - clearing old data');
         
         // Hapus semua data lama dengan error handling (except quiz results and progress)
         try {
           await txn.delete('kuis');
           await txn.delete('pelajaran');
           await txn.delete('kelas');
-          print('✅ Successfully cleared old data');
+          AppLogger.database('CLEAR', 'Successfully cleared old data');
         } catch (clearError) {
-          print('❌ Error clearing old data: $clearError');
+          AppLogger.error('Error clearing old data', clearError);
           throw Exception('Failed to clear old data: $clearError');
         }
         
@@ -382,7 +383,7 @@ class DatabaseHelper {
         // Simpan data baru
         for (var kelas in kelasList) {
           try {
-            print('📝 Processing kelas: ${kelas.id} - ${kelas.nomorKelas}');
+            AppLogger.database('KELAS', 'Processing kelas: ${kelas.id} - ${kelas.nomorKelas}');
             final kelasModel = KelasModel.fromEntity(kelas);
             
             await txn.insert(
@@ -397,7 +398,7 @@ class DatabaseHelper {
             
             for (var pelajaran in kelas.pelajaran) {
               try {
-                print('  📚 Processing pelajaran: ${pelajaran.idPelajaran} - ${pelajaran.namaPelajaran}');
+                AppLogger.database('PELAJARAN', 'Processing pelajaran: ${pelajaran.idPelajaran} - ${pelajaran.namaPelajaran}');
                 final pelajaranModel = PelajaranModel.fromEntity(pelajaran);
                 
                 await txn.insert(
@@ -414,7 +415,7 @@ class DatabaseHelper {
                 for (var kuis in pelajaran.kuis) {
                   try {
                     if (kuis.idKuis.isEmpty || kuis.soal.isEmpty) {
-                      print('    ⚠️ Skipping invalid kuis: id=${kuis.idKuis}, soal=${kuis.soal.length} chars');
+                      AppLogger.warning('Skipping invalid kuis: id=${kuis.idKuis}, soal=${kuis.soal.length} chars');
                       kuisErrors++;
                       continue;
                     }
@@ -432,54 +433,53 @@ class DatabaseHelper {
                     
                   } catch (kuisError) {
                     kuisErrors++;
-                    print('    ❌ Error saving kuis ${kuis.idKuis}: $kuisError');
-                    print('    📄 Kuis data: soal=${kuis.soal.length} chars, opsiA=${kuis.opsiA.length} chars');
+                    AppLogger.error('Error saving kuis ${kuis.idKuis}', kuisError);
+                    AppLogger.debug('Kuis data: soal=${kuis.soal.length} chars, opsiA=${kuis.opsiA.length} chars');
                     // Continue dengan kuis lainnya
                   }
                 }
                 
-                print('    ✅ Processed ${pelajaran.kuis.length} kuis for ${pelajaran.namaPelajaran}');
+                AppLogger.database('KUIS', 'Processed ${pelajaran.kuis.length} kuis for ${pelajaran.namaPelajaran}');
                 
                 // Update or create progress for this pelajaran
                 await _updatePelajaranProgress(txn, pelajaran.idPelajaran, pelajaran.kuis.length);
                 
               } catch (pelajaranError) {
                 pelajaranErrors++;
-                print('  ❌ Error saving pelajaran ${pelajaran.idPelajaran}: $pelajaranError');
-                print('  📄 Pelajaran data: nama=${pelajaran.namaPelajaran}, kuis count=${pelajaran.kuis.length}');
+                AppLogger.error('Error saving pelajaran ${pelajaran.idPelajaran}', pelajaranError);
+                AppLogger.debug('Pelajaran data: nama=${pelajaran.namaPelajaran}, kuis count=${pelajaran.kuis.length}');
                 // Continue dengan pelajaran lainnya
               }
             }
             
-            print('  ✅ Processed ${kelas.pelajaran.length} pelajaran for kelas ${kelas.nomorKelas}');
+            AppLogger.database('KELAS', 'Processed ${kelas.pelajaran.length} pelajaran for kelas ${kelas.nomorKelas}');
             
           } catch (kelasError) {
             kelasErrors++;
-            print('❌ Error saving kelas ${kelas.id}: $kelasError');
-            print('📄 Kelas data: nomorKelas=${kelas.nomorKelas}, pelajaran count=${kelas.pelajaran.length}');
+            AppLogger.error('Error saving kelas ${kelas.id}', kelasError);
+            AppLogger.debug('Kelas data: nomorKelas=${kelas.nomorKelas}, pelajaran count=${kelas.pelajaran.length}');
             // Continue dengan kelas lainnya
           }
         }
         
-        print('📊 Transaction completed:');
-        print('  ✅ Kelas saved: $kelasCount (errors: $kelasErrors)');
-        print('  ✅ Pelajaran saved: $pelajaranCount (errors: $pelajaranErrors)');
-        print('  ✅ Kuis saved: $kuisCount (errors: $kuisErrors)');
+        AppLogger.database('TRANSACTION', 'Transaction completed:');
+        AppLogger.database('STATS', 'Kelas saved: $kelasCount (errors: $kelasErrors)');
+        AppLogger.database('STATS', 'Pelajaran saved: $pelajaranCount (errors: $pelajaranErrors)');
+        AppLogger.database('STATS', 'Kuis saved: $kuisCount (errors: $kuisErrors)');
         
         if (kelasErrors > 0 || pelajaranErrors > 0 || kuisErrors > 0) {
-          print('⚠️ Some data had errors but transaction completed');
+          AppLogger.warning('Some data had errors but transaction completed');
         }
         
       });
       
-      print('✅ Successfully completed saveAllData operation');
+      AppLogger.sync('Successfully completed saveAllData operation');
       
       // Clean up orphaned quiz results after data sync
       await _cleanupOrphanedQuizResults();
       
     } catch (error, stackTrace) {
-      print('🚨 Critical error in saveAllData: $error');
-      print('🔍 Stack trace: $stackTrace');
+      AppLogger.error('Critical error in saveAllData', error, stackTrace);
       throw Exception('Failed to save data to database: $error');
     }
   }
@@ -518,14 +518,14 @@ class DatabaseHelper {
         );
       }
     } catch (e) {
-      print('❌ Error updating progress for $idPelajaran: $e');
+      AppLogger.error('Error updating progress for $idPelajaran', e);
     }
   }
 
   // Method to clean up orphaned quiz results after sync
   Future<void> _cleanupOrphanedQuizResults() async {
     try {
-      print('🧹 Cleaning up orphaned quiz results...');
+      AppLogger.database('CLEANUP', 'Cleaning up orphaned quiz results...');
       final db = await database;
       
       await db.transaction((txn) async {
@@ -541,8 +541,8 @@ class DatabaseHelper {
           WHERE idPelajaran NOT IN (SELECT idPelajaran FROM pelajaran)
         ''');
         
-        print('🗑️ Cleaned up $deletedResults orphaned quiz results');
-        print('🗑️ Cleaned up $deletedProgress orphaned progress records');
+        AppLogger.database('CLEANUP', 'Cleaned up $deletedResults orphaned quiz results');
+        AppLogger.database('CLEANUP', 'Cleaned up $deletedProgress orphaned progress records');
         
         // Recalculate progress for all remaining pelajaran
         final allPelajaran = await txn.query('pelajaran', columns: ['idPelajaran']);
@@ -551,11 +551,11 @@ class DatabaseHelper {
           await _recalculateProgressInTransaction(txn, idPelajaran);
         }
         
-        print('✅ Orphaned data cleanup completed');
+        AppLogger.database('CLEANUP', 'Orphaned data cleanup completed');
       });
       
     } catch (e) {
-      print('❌ Error during orphaned data cleanup: $e');
+      AppLogger.error('Error during orphaned data cleanup', e);
       // Don't rethrow to avoid breaking the sync process
     }
   }
@@ -603,7 +603,7 @@ class DatabaseHelper {
       );
       
     } catch (e) {
-      print('❌ Error recalculating progress for $idPelajaran: $e');
+      AppLogger.error('Error recalculating progress for $idPelajaran', e);
       // Continue with other pelajaran
     }
   }
@@ -622,10 +622,10 @@ class DatabaseHelper {
 
       // Update progress after saving result
       await _recalculateProgress(result.idPelajaran);
-      print('✅ Quiz result saved: ${result.idKuis}');
+      AppLogger.database('QUIZ', 'Quiz result saved: ${result.idKuis}');
       
     } catch (e) {
-      print('❌ Error saving quiz result: $e');
+      AppLogger.error('Error saving quiz result', e);
       rethrow;
     }
   }
@@ -642,7 +642,7 @@ class DatabaseHelper {
 
       return results.map((json) => QuizResultModel.fromJson(json)).toList();
     } catch (e) {
-      print('❌ Error getting quiz results: $e');
+      AppLogger.error('Error getting quiz results for $idPelajaran', e);
       return []; // Return empty list instead of crashing
     }
   }
@@ -662,7 +662,7 @@ class DatabaseHelper {
       }
       return null;
     } catch (e) {
-      print('❌ Error getting quiz result: $e');
+      AppLogger.error('Error getting quiz result for $idKuis', e);
       return null;
     }
   }
@@ -693,7 +693,7 @@ class DatabaseHelper {
       );
     });
 
-    print('✅ Reset progress for pelajaran: $idPelajaran');
+    AppLogger.database('RESET', 'Progress reset for pelajaran: $idPelajaran');
   }
 
   Future<PelajaranProgress?> getPelajaranProgress(String idPelajaran) async {
@@ -711,7 +711,7 @@ class DatabaseHelper {
       }
       return null;
     } catch (e) {
-      print('❌ Error getting pelajaran progress: $e');
+      AppLogger.error('Error getting pelajaran progress for $idPelajaran', e);
       return null;
     }
   }
@@ -759,10 +759,10 @@ class DatabaseHelper {
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
       
-      print('✅ Progress recalculated for $idPelajaran: $completedKuis/$totalKuis (${score.toStringAsFixed(1)}%)');
+      AppLogger.database('PROGRESS', 'Recalculated for $idPelajaran: $completedKuis/$totalKuis (${score.toStringAsFixed(1)}%)');
       
     } catch (e) {
-      print('❌ Error recalculating progress for $idPelajaran: $e');
+      AppLogger.error('Error recalculating progress for $idPelajaran', e);
       // Don't rethrow to avoid breaking the quiz save operation
     }
   }

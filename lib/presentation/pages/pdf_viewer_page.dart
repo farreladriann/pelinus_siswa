@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'dart:io';
+import '../../core/utils/logger.dart';
 import '../../domain/entities/pdf_file.dart';
 import '../widgets/pelinus_app_bar.dart';
 
@@ -72,11 +73,11 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
           },
           onError: (error) {
             // Silent error - tidak mengubah state error
-            print('PDF Error: $error');
+            AppLogger.warning('PDF Error: $error');
           },
           onPageError: (page, error) {
             // Silent error - tidak mengubah state error
-            print('PDF Page Error: $page - $error');
+            AppLogger.warning('PDF Page Error: $page - $error');
           },
           onViewCreated: (PDFViewController pdfViewController) {
             // PDF controller ready

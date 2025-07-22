@@ -1,5 +1,6 @@
 // lib/presentation/providers/kelas_provider.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/utils/logger.dart';
 import '../../domain/entities/kelas.dart';
 import '../../domain/usecases/get_cached_data.dart';
 import '../../domain/usecases/sync_data.dart';
@@ -48,16 +49,16 @@ class KelasNotifier extends StateNotifier<KelasState> {
     state = state.copyWith(isLoading: true, error: null);
     
     try {
-      print('🔄 Loading cached data...');
+      AppLogger.info('Loading cached data...');
       final kelasList = await getCachedData();
-      print('✅ Successfully loaded ${kelasList.length} kelas from cache');
+      AppLogger.info('Successfully loaded ${kelasList.length} kelas from cache');
       
       state = state.copyWith(
         kelasList: kelasList,
         isLoading: false,
       );
     } catch (e) {
-      print('❌ Error loading cached data: $e');
+      AppLogger.warning('Error loading cached data: $e');
       
       // Silent error - tidak menampilkan error di UI
       state = state.copyWith(
@@ -71,31 +72,31 @@ class KelasNotifier extends StateNotifier<KelasState> {
     state = state.copyWith(isSyncing: true, error: null);
     
     try {
-      print('🔄 Starting data synchronization...');
+      AppLogger.info('Starting data synchronization...');
       await syncData();
-      print('🔄 Sync completed, reloading data...');
+      AppLogger.info('Sync completed, reloading data...');
       
       // Reload data after sync
       final kelasList = await getCachedData();
-      print('✅ Sync successful: ${kelasList.length} kelas loaded');
+      AppLogger.info('Sync successful: ${kelasList.length} kelas loaded');
       
       state = state.copyWith(
         kelasList: kelasList,
         isSyncing: false,
       );
     } catch (e) {
-      print('❌ Sync error: $e');
+      AppLogger.warning('Sync error: $e');
       
       // Silent error - reload cached data instead of showing error
       try {
         final kelasList = await getCachedData();
-        print('✅ Fallback to cached data: ${kelasList.length} kelas loaded');
+        AppLogger.info('Fallback to cached data: ${kelasList.length} kelas loaded');
         state = state.copyWith(
           kelasList: kelasList,
           isSyncing: false,
         );
       } catch (cacheError) {
-        print('❌ Cache error: $cacheError');
+        AppLogger.error('Cache error: $cacheError');
         state = state.copyWith(
           isSyncing: false,
           kelasList: [], // Keep empty list instead of showing error

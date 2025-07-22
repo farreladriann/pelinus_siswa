@@ -1,5 +1,6 @@
 // lib/data/repositories/data_repository_impl.dart
 import 'dart:io';
+import '../../core/utils/logger.dart';
 import '../../domain/repositories/data_repository.dart';
 import '../../domain/entities/kelas.dart';
 import '../../domain/entities/pdf_file.dart';
@@ -37,25 +38,25 @@ class DataRepositoryImpl implements DataRepository {
     }
 
     try {
-      print('Starting data sync...');
+      AppLogger.info('Starting data sync...');
       
       // 1. Ambil data dari API
       final newKelasList = await apiService.getCachedData();
-      print('Received ${newKelasList.length} kelas from API');
+      AppLogger.info('Received ${newKelasList.length} kelas from API');
       
       // Validasi data yang diterima
       if (newKelasList.isEmpty) {
-        print('Warning: Received empty data from API');
+        AppLogger.warning('Warning: Received empty data from API');
         return; // Jangan update jika tidak ada data
       }
       
       // 2. Dapatkan semua ID pelajaran yang ada saat ini
       final currentPelajaranIds = await databaseHelper.getAllPelajaranIds();
-      print('Current pelajaran IDs: ${currentPelajaranIds.length}');
+      AppLogger.debug('Current pelajaran IDs: ${currentPelajaranIds.length}');
       
       // 3. Simpan data baru ke database (akan mengganti semua data lama)
       await databaseHelper.saveAllData(newKelasList);
-      print('Successfully saved data to database');
+      AppLogger.info('Successfully saved data to database');
       
       // 4. Cari ID pelajaran baru yang perlu diunduh PDF-nya
       final newPelajaranIds = <String>[];
@@ -66,7 +67,7 @@ class DataRepositoryImpl implements DataRepository {
           }
         }
       }
-      print('New pelajaran IDs: ${newPelajaranIds.length}');
+      AppLogger.debug('New pelajaran IDs: ${newPelajaranIds.length}');
       
       // 5. Unduh PDF untuk pelajaran baru
       for (var kelas in newKelasList) {
@@ -77,15 +78,15 @@ class DataRepositoryImpl implements DataRepository {
           
           if (pdfExists == null) {
             try {
-              print('Downloading PDF for: ${pelajaran.namaPelajaran}');
+              AppLogger.info('Downloading PDF for: ${pelajaran.namaPelajaran}');
               final pdfFile = await apiService.downloadPdf(
                 pelajaran.idPelajaran,
                 pelajaran.namaPelajaran,
               );
               await databaseHelper.insertPdfFile(PdfFileModel.fromEntity(pdfFile));
-              print('Successfully downloaded PDF for: ${pelajaran.namaPelajaran}');
+              AppLogger.info('Successfully downloaded PDF for: ${pelajaran.namaPelajaran}');
             } catch (pdfError) {
-              print('Failed to download PDF for ${pelajaran.namaPelajaran}: $pdfError');
+              AppLogger.warning('Failed to download PDF for ${pelajaran.namaPelajaran}: $pdfError');
               // Continue dengan pelajaran lainnya, jangan stop sync
             }
           }
@@ -97,7 +98,7 @@ class DataRepositoryImpl implements DataRepository {
           .where((id) => !newPelajaranIds.contains(id))
           .toList();
       
-      print('Removing ${removedPelajaranIds.length} obsolete PDFs');
+      AppLogger.info('Removing ${removedPelajaranIds.length} obsolete PDFs');
       for (var idPelajaran in removedPelajaranIds) {
         try {
           final pdfFile = await databaseHelper.getPdfFile(idPelajaran);
@@ -109,18 +110,18 @@ class DataRepositoryImpl implements DataRepository {
             }
             // Hapus record dari database
             await databaseHelper.deletePdfFile(idPelajaran);
-            print('Removed PDF for pelajaran: $idPelajaran');
+            AppLogger.debug('Removed PDF for pelajaran: $idPelajaran');
           }
         } catch (deleteError) {
-          print('Error deleting PDF for pelajaran $idPelajaran: $deleteError');
+          AppLogger.warning('Error deleting PDF for pelajaran $idPelajaran: $deleteError');
           // Continue dengan yang lainnya
         }
       }
       
-      print('Data sync completed successfully');
+      AppLogger.info('Data sync completed successfully');
       
     } catch (e) {
-      print('Error during sync: $e');
+      AppLogger.error('Error during sync: $e');
       if (e is NetworkException || e is ServerException) {
         rethrow;
       }

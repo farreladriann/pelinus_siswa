@@ -1,5 +1,6 @@
 // lib/data/models/pelajaran_model.dart
 import '../../domain/entities/pelajaran.dart';
+import '../../core/utils/logger.dart';
 import 'kuis_model.dart';
 
 class PelajaranModel extends Pelajaran {
@@ -19,7 +20,7 @@ class PelajaranModel extends Pelajaran {
               try {
                 return KuisModel.fromJson(e as Map<String, dynamic>);
               } catch (error) {
-                print('Error parsing kuis in PelajaranModel: $error');
+                AppLogger.warning('Error parsing kuis in PelajaranModel: $error');
                 return null;
               }
             })
@@ -28,8 +29,8 @@ class PelajaranModel extends Pelajaran {
             .toList() ?? [],
       );
     } catch (error) {
-      print('Error parsing PelajaranModel: $error');
-      print('JSON data: $json');
+      AppLogger.error('Error parsing PelajaranModel: $error');
+      AppLogger.debug('JSON data: $json');
       // Return default model jika ada error
       return PelajaranModel(
         idPelajaran: '',

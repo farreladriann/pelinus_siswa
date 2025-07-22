@@ -1,6 +1,7 @@
 // lib/data/models/kelas_model.dart
 import '../../domain/entities/kelas.dart';
 import 'pelajaran_model.dart';
+import '../../core/utils/logger.dart';
 
 class KelasModel extends Kelas {
   const KelasModel({
@@ -18,7 +19,7 @@ class KelasModel extends Kelas {
             try {
               return PelajaranModel.fromJson(e as Map<String, dynamic>);
             } catch (error) {
-              print('Error parsing pelajaran in KelasModel: $error');
+              AppLogger.error('Error parsing pelajaran in KelasModel', error);
               return null;
             }
           })

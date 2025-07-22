@@ -9,6 +9,7 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/error/exceptions.dart';
 import '../../../domain/entities/pdf_file.dart';
 import '../../models/pdf_file_model.dart';
+import '../../../core/utils/logger.dart';
 
 class ApiService {
   final Dio _dio;
@@ -21,18 +22,18 @@ class ApiService {
 
   Future<List<KelasModel>> getCachedData() async {
     try {
-      print('🔄 Fetching data from API...');
+      AppLogger.network('GET', 'Fetching data from API...');
       final response = await _dio.get(ApiConstants.cacheEndpoint);
       
       if (response.statusCode == 200) {
         final dynamic responseData = response.data;
-        print('📥 Received response data type: ${responseData.runtimeType}');
+        AppLogger.network('RESPONSE', 'Received response data type: ${responseData.runtimeType}');
         
         List<KelasModel> kelasList = [];
         
         if (responseData is Map<String, dynamic>) {
           // Handle response format: {kelasId: {kelasData}}
-          print('📊 Processing Map format with ${responseData.length} entries');
+          AppLogger.network('PARSE', 'Processing Map format with ${responseData.length} entries');
           responseData.forEach((kelasId, kelasJson) {
             try {
               final kelasData = kelasJson as Map<String, dynamic>;
@@ -58,14 +59,14 @@ class ApiService {
                       pelajaranJson['kuis'] = kuisData;
                       
                       pelajaranList.add(PelajaranModel.fromJson(pelajaranJson));
-                      print('✅ Parsed pelajaran: ${pelajaranJson['namaPelajaran']} with ${kuisData.length} kuis');
+                      AppLogger.network('PARSE', 'Parsed pelajaran: ${pelajaranJson['namaPelajaran']} with ${kuisData.length} kuis');
                     } else {
-                      print('⚠️ Skipping pelajaran with missing required fields');
+                      AppLogger.warning('Skipping pelajaran with missing required fields');
                     }
                   }
                 } catch (e) {
-                  print('❌ Error parsing pelajaran: $e');
-                  print('📄 Problematic pelajaran data: $pelajaranJson');
+                  AppLogger.error('Error parsing pelajaran', e);
+                  AppLogger.debug('Problematic pelajaran data: $pelajaranJson');
                   // Skip invalid pelajaran, continue processing
                 }
               }
@@ -76,38 +77,38 @@ class ApiService {
                 pelajaran: pelajaranList,
               ));
               
-              print('✅ Parsed kelas: ${kelasData['nomorKelas']} with ${pelajaranList.length} pelajaran');
+              AppLogger.network('PARSE', 'Parsed kelas: ${kelasData['nomorKelas']} with ${pelajaranList.length} pelajaran');
               
             } catch (e) {
-              print('❌ Error parsing kelas $kelasId: $e');
-              print('📄 Problematic kelas data: $kelasJson');
+              AppLogger.error('Error parsing kelas $kelasId', e);
+              AppLogger.debug('Problematic kelas data: $kelasJson');
               // Skip invalid kelas, continue processing
             }
           });
         } else if (responseData is List<dynamic>) {
           // Handle response format: [kelasData, kelasData, ...]
-          print('📊 Processing List format with ${responseData.length} entries');
+          AppLogger.network('PARSE', 'Processing List format with ${responseData.length} entries');
           for (var kelasJson in responseData) {
             try {
               if (kelasJson is Map<String, dynamic>) {
                 kelasList.add(KelasModel.fromJson(kelasJson));
-                print('✅ Parsed kelas from array: ${kelasJson['nomorKelas']}');
+                AppLogger.network('PARSE', 'Parsed kelas from array: ${kelasJson['nomorKelas']}');
               }
             } catch (e) {
-              print('❌ Error parsing kelas from array: $e');
-              print('📄 Problematic kelas data: $kelasJson');
+              AppLogger.error('Error parsing kelas from array', e);
+              AppLogger.debug('Problematic kelas data: $kelasJson');
             }
           }
         } else {
-          print('⚠️ Unexpected response format: ${responseData.runtimeType}');
-          print('📄 Response data: $responseData');
+          AppLogger.warning('Unexpected response format: ${responseData.runtimeType}');
+          AppLogger.debug('Response data: $responseData');
         }
         
-        print('✅ Successfully parsed ${kelasList.length} kelas from API');
+        AppLogger.network('SUCCESS', 'Successfully parsed ${kelasList.length} kelas from API');
         
         // Validate that we have data
         if (kelasList.isEmpty) {
-          print('⚠️ Warning: No valid kelas data found in response');
+          AppLogger.warning('No valid kelas data found in response');
         }
         
         return kelasList;
@@ -115,11 +116,8 @@ class ApiService {
         throw ServerException('Failed to load cache data: HTTP ${response.statusCode}');
       }
     } on DioException catch (e) {
-      print('🚨 DioException in getCachedData:');
-      print('  Type: ${e.type}');
-      print('  Message: ${e.message}');
-      print('  Response: ${e.response?.data}');
-      print('  Status Code: ${e.response?.statusCode}');
+      AppLogger.error('DioException in getCachedData', e);
+      AppLogger.debug('Type: ${e.type}, Message: ${e.message}, Response: ${e.response?.data}, Status Code: ${e.response?.statusCode}');
       
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout) {
@@ -134,14 +132,13 @@ class ApiService {
         throw ServerException('Network error: ${e.message ?? 'Unknown error'}');
       }
     } on FormatException catch (e) {
-      print('🚨 FormatException in getCachedData: $e');
+      AppLogger.error('FormatException in getCachedData', e);
       throw ServerException('Data format error: Unable to parse server response');
     } on TypeError catch (e) {
-      print('🚨 TypeError in getCachedData: $e');
+      AppLogger.error('TypeError in getCachedData', e);
       throw ServerException('Data type error: Server returned unexpected data structure');
     } catch (e, stackTrace) {
-      print('🚨 Unexpected error in getCachedData: $e');
-      print('🔍 Stack trace: $stackTrace');
+      AppLogger.error('Unexpected error in getCachedData', e, stackTrace);
       throw ServerException('Unexpected error occurred: ${e.toString()}');
     }
   }

@@ -1,5 +1,6 @@
 // lib/data/models/kuis_model.dart
 import '../../domain/entities/kuis.dart';
+import '../../core/utils/logger.dart';
 
 class KuisModel extends Kuis {
   const KuisModel({
@@ -16,7 +17,7 @@ class KuisModel extends Kuis {
   factory KuisModel.fromJson(Map<String, dynamic> json) {
     try {
       // Enhanced validation with detailed logging
-      print('🔍 Parsing KuisModel from JSON: ${json.keys.toList()}');
+      AppLogger.debug('Parsing KuisModel from JSON: ${json.keys.toList()}');
       
       // Validate required fields
       final requiredFields = ['idKuis', 'nomorKuis', 'soal', 'opsiA', 'opsiB', 'opsiC', 'opsiD', 'opsiJawaban'];
@@ -25,8 +26,8 @@ class KuisModel extends Kuis {
       ).toList();
       
       if (missingFields.isNotEmpty) {
-        print('⚠️ Missing or empty fields in KuisModel: $missingFields');
-        print('📄 JSON data: $json');
+        AppLogger.warning('Missing or empty fields in KuisModel: $missingFields');
+        AppLogger.debug('JSON data: $json');
       }
       
       // Safe parsing with fallbacks
@@ -72,15 +73,15 @@ class KuisModel extends Kuis {
       
       // Validate critical data
       if (idKuis.isEmpty) {
-        print('❌ Critical: idKuis is empty for quiz');
+        AppLogger.error('Critical: idKuis is empty for quiz');
       }
       
       if (soal.isEmpty) {
-        print('❌ Critical: soal (question) is empty for quiz $idKuis');
+        AppLogger.error('Critical: soal (question) is empty for quiz $idKuis');
       }
       
       if (opsiJawaban.isEmpty) {
-        print('⚠️ Warning: opsiJawaban (correct answer) is empty for quiz $idKuis');
+        AppLogger.warning('opsiJawaban (correct answer) is empty for quiz $idKuis');
       }
       
       final kuisModel = KuisModel(
@@ -94,13 +95,12 @@ class KuisModel extends Kuis {
         opsiJawaban: opsiJawaban,
       );
       
-      print('✅ Successfully parsed KuisModel: $idKuis - ${soal.length > 50 ? soal.substring(0, 50) + '...' : soal}');
+      AppLogger.info('Successfully parsed KuisModel: $idKuis - ${soal.length > 50 ? "${soal.substring(0, 50)}..." : soal}');
       return kuisModel;
       
     } catch (error, stackTrace) {
-      print('🚨 Error parsing KuisModel: $error');
-      print('📄 JSON data: $json');
-      print('🔍 Stack trace: $stackTrace');
+      AppLogger.error('Error parsing KuisModel', error, stackTrace);
+      AppLogger.debug('JSON data: $json');
       
       // Return a valid but marked-as-invalid model
       return KuisModel(

@@ -81,7 +81,6 @@ class _HomePageState extends ConsumerState<HomePage>
   @override
   Widget build(BuildContext context) {
     final kelasState = ref.watch(kelasProvider);
-    final syncTimerState = ref.watch(syncTimerProvider);
     final quizState = ref.watch(quizProvider);
 
     return Scaffold(
@@ -581,13 +580,13 @@ class StatCard extends StatelessWidget {
   final Color color;
 
   const StatCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.value,
     required this.subtitle,
     required this.icon,
     required this.color,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -1,5 +1,6 @@
 // lib/presentation/providers/quiz_provider.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/utils/logger.dart';
 import '../../domain/entities/quiz_result.dart';
 import '../../domain/usecases/quiz_management.dart';
 import 'app_providers.dart';
@@ -59,7 +60,7 @@ class QuizNotifier extends StateNotifier<QuizState> {
         state = state.copyWith(progressMap: updatedProgressMap);
       }
     } catch (e) {
-      print('❌ Error loading progress for $idPelajaran: $e');
+      AppLogger.error('Error loading progress for $idPelajaran: $e');
     }
   }
 
@@ -87,7 +88,7 @@ class QuizNotifier extends StateNotifier<QuizState> {
       await loadPelajaranProgress(idPelajaran);
       
     } catch (e) {
-      print('❌ Error loading quiz results: $e');
+      AppLogger.error('Error loading quiz results: $e');
       state = state.copyWith(
         isLoading: false,
         error: 'Failed to load quiz results',
@@ -124,10 +125,10 @@ class QuizNotifier extends StateNotifier<QuizState> {
       // Reload progress
       await loadPelajaranProgress(idPelajaran);
       
-      print('✅ Quiz answered: $idKuis, correct: $isCorrect');
+      AppLogger.info('Quiz answered: $idKuis, correct: $isCorrect');
       
     } catch (e) {
-      print('❌ Error saving quiz answer: $e');
+      AppLogger.error('Error saving quiz answer: $e');
       state = state.copyWith(error: 'Failed to save answer');
     }
   }
@@ -154,10 +155,10 @@ class QuizNotifier extends StateNotifier<QuizState> {
       // Reload progress
       await loadPelajaranProgress(idPelajaran);
       
-      print('✅ Progress reset for pelajaran: $idPelajaran');
+      AppLogger.info('Progress reset for pelajaran: $idPelajaran');
       
     } catch (e) {
-      print('❌ Error resetting progress: $e');
+      AppLogger.error('Error resetting progress: $e');
       state = state.copyWith(
         isLoading: false,
         error: 'Failed to reset progress',

@@ -22,9 +22,9 @@ class QuizPage extends ConsumerStatefulWidget {
 }
 
 class _QuizPageState extends ConsumerState<QuizPage> {
-  PageController _pageController = PageController();
+  final PageController _pageController = PageController();
   int _currentQuestionIndex = 0;
-  Map<String, String> _userAnswers = {};
+  final Map<String, String> _userAnswers = {};
 
   @override
   void initState() {

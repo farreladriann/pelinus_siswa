@@ -256,19 +256,6 @@ class QuizProgressCard extends StatelessWidget {
                           minimumSize: Size(0, 0),
                         ),
                       ),
-                    Spacer(),
-                    ElevatedButton.icon(
-                      onPressed: onTap,
-                      icon: Icon(Icons.quiz, size: 16),
-                      label: Text(
-                        progress.isCompleted ? 'Review' : 'Lanjutkan',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        minimumSize: Size(0, 0),
-                      ),
-                    ),
                   ],
                 ),
               ],

@@ -939,34 +939,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
                 // Action buttons
                 Row(
                   children: [
-                    if (progress != null && progress.completedKuis < progress.totalKuis)
-                      Expanded(
-                        child: Container(
-                          height: 48,
-                          child: TextButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            style: TextButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                side: BorderSide(color: AppColors.primary.withOpacity(0.3)),
-                              ),
-                            ),
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                                'Lanjutkan',
-                                style: TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                maxLines: 1,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
                     if (progress != null && progress.completedKuis > 0) ...[
-                      if (progress.completedKuis < progress.totalKuis) SizedBox(width: 8),
                       Expanded(
                         child: Container(
                           height: 48,

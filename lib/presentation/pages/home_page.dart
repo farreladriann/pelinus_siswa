@@ -5,6 +5,7 @@ import '../providers/kelas_provider.dart';
 import '../providers/sync_timer_provider.dart';
 import '../widgets/pelinus_app_bar.dart';
 import 'pelajaran_list_page.dart';
+import 'quiz_statistics_page.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -44,6 +45,22 @@ class _HomePageState extends ConsumerState<HomePage> {
         },
         child: _buildBody(context, kelasState, syncTimerState),
       ),
+      floatingActionButton: kelasState.kelasList.isNotEmpty 
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => QuizStatisticsPage(
+                      kelasList: kelasState.kelasList,
+                    ),
+                  ),
+                );
+              },
+              icon: Icon(Icons.analytics),
+              label: Text('Statistik'),
+              backgroundColor: Colors.blue,
+            )
+          : null,
     );
   }
 

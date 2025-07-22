@@ -5,8 +5,10 @@ import '../../models/kelas_model.dart';
 import '../../models/pelajaran_model.dart';
 import '../../models/kuis_model.dart';
 import '../../models/pdf_file_model.dart';
+import '../../models/quiz_result_model.dart';
 import '../../../domain/entities/kelas.dart';
 import '../../../domain/entities/pdf_file.dart';
+import '../../../domain/entities/quiz_result.dart';
 
 class DatabaseHelper {
   static DatabaseHelper? _instance;
@@ -20,16 +22,33 @@ class DatabaseHelper {
   }
 
   Future<Database> get database async {
-    _database ??= await _initDatabase();
-    return _database!;
+    if (_database != null) return _database!;
+    
+    try {
+      _database = await _initDatabase();
+      return _database!;
+    } catch (e) {
+      print('❌ Database initialization failed: $e');
+      
+      // If database fails to initialize, try to reset it
+      if (e.toString().contains('table') && e.toString().contains('already exists')) {
+        print('🔄 Attempting to reset corrupted database...');
+        await resetDatabase();
+        _database = await _initDatabase();
+        return _database!;
+      }
+      
+      rethrow;
+    }
   }
 
   Future<Database> _initDatabase() async {
     String path = join(await getDatabasesPath(), 'pelinus_siswa.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 4, // Incremented version to fix migration issues
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -77,6 +96,109 @@ class DatabaseHelper {
         downloadedAt TEXT NOT NULL
       )
     ''');
+
+    // Tabel Quiz Results
+    await db.execute('''
+      CREATE TABLE quiz_results (
+        id TEXT PRIMARY KEY,
+        idPelajaran TEXT NOT NULL,
+        idKuis TEXT NOT NULL,
+        userAnswer TEXT NOT NULL,
+        isCorrect INTEGER NOT NULL,
+        answeredAt TEXT NOT NULL,
+        FOREIGN KEY (idPelajaran) REFERENCES pelajaran (idPelajaran),
+        FOREIGN KEY (idKuis) REFERENCES kuis (idKuis)
+      )
+    ''');
+
+    // Tabel Pelajaran Progress
+    await db.execute('''
+      CREATE TABLE pelajaran_progress (
+        idPelajaran TEXT PRIMARY KEY,
+        totalKuis INTEGER NOT NULL,
+        completedKuis INTEGER NOT NULL,
+        correctAnswers INTEGER NOT NULL,
+        score REAL NOT NULL,
+        lastAttemptAt TEXT,
+        isCompleted INTEGER NOT NULL,
+        FOREIGN KEY (idPelajaran) REFERENCES pelajaran (idPelajaran)
+      )
+    ''');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    print('🔄 Database upgrade: $oldVersion -> $newVersion');
+    
+    if (oldVersion < 2) {
+      // Add new tables for quiz results and progress (use IF NOT EXISTS to avoid conflicts)
+      print('📝 Adding quiz_results table...');
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS quiz_results (
+          id TEXT PRIMARY KEY,
+          idPelajaran TEXT NOT NULL,
+          idKuis TEXT NOT NULL,
+          userAnswer TEXT NOT NULL,
+          isCorrect INTEGER NOT NULL,
+          answeredAt TEXT NOT NULL,
+          FOREIGN KEY (idPelajaran) REFERENCES pelajaran (idPelajaran),
+          FOREIGN KEY (idKuis) REFERENCES kuis (idKuis)
+        )
+      ''');
+
+      print('📝 Adding pelajaran_progress table...');
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS pelajaran_progress (
+          idPelajaran TEXT PRIMARY KEY,
+          totalKuis INTEGER NOT NULL,
+          completedKuis INTEGER NOT NULL,
+          correctAnswers INTEGER NOT NULL,
+          score REAL NOT NULL,
+          lastAttemptAt TEXT,
+          isCompleted INTEGER NOT NULL,
+          FOREIGN KEY (idPelajaran) REFERENCES pelajaran (idPelajaran)
+        )
+      ''');
+    }
+    
+    if (oldVersion < 3) {
+      // Version 3 fixes - ensure tables exist with IF NOT EXISTS
+      print('📝 Ensuring quiz tables exist for version 3...');
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS quiz_results (
+          id TEXT PRIMARY KEY,
+          idPelajaran TEXT NOT NULL,
+          idKuis TEXT NOT NULL,
+          userAnswer TEXT NOT NULL,
+          isCorrect INTEGER NOT NULL,
+          answeredAt TEXT NOT NULL,
+          FOREIGN KEY (idPelajaran) REFERENCES pelajaran (idPelajaran),
+          FOREIGN KEY (idKuis) REFERENCES kuis (idKuis)
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS pelajaran_progress (
+          idPelajaran TEXT PRIMARY KEY,
+          totalKuis INTEGER NOT NULL,
+          completedKuis INTEGER NOT NULL,
+          correctAnswers INTEGER NOT NULL,
+          score REAL NOT NULL,
+          lastAttemptAt TEXT,
+          isCompleted INTEGER NOT NULL,
+          FOREIGN KEY (idPelajaran) REFERENCES pelajaran (idPelajaran)
+        )
+      ''');
+    }
+    
+    if (oldVersion < 4) {
+      // Version 4 - Clean up orphaned quiz results after sync
+      print('📝 Adding cleanup for orphaned quiz results...');
+      
+      // This will be implemented in the saveAllData method
+      // No schema changes needed, just logic improvements
+    }
+    
+    print('✅ Database upgrade completed');
   }
 
   // Metode untuk Kelas
@@ -187,10 +309,37 @@ class DatabaseHelper {
   Future<void> clearAllData() async {
     final db = await database;
     await db.transaction((txn) async {
+      // Clear all tables in correct order (respecting foreign keys)
+      await txn.delete('quiz_results');
+      await txn.delete('pelajaran_progress');
       await txn.delete('kuis');
       await txn.delete('pelajaran');
       await txn.delete('kelas');
+      await txn.delete('pdf_files');
     });
+    print('✅ All data cleared from database');
+  }
+
+  // Method to completely reset database (for troubleshooting)
+  Future<void> resetDatabase() async {
+    try {
+      String path = join(await getDatabasesPath(), 'pelinus_siswa.db');
+      
+      // Close current database connection
+      if (_database != null) {
+        await _database!.close();
+        _database = null;
+      }
+      
+      // Delete the database file
+      await deleteDatabase(path);
+      print('✅ Database file deleted and will be recreated');
+      
+      // The database will be recreated on next access
+    } catch (e) {
+      print('❌ Error resetting database: $e');
+      rethrow;
+    }
   }
 
   Future<void> deletePdfFile(String idPelajaran) async {
@@ -216,7 +365,7 @@ class DatabaseHelper {
       await db.transaction((txn) async {
         print('📊 Transaction started - clearing old data');
         
-        // Hapus semua data lama dengan error handling
+        // Hapus semua data lama dengan error handling (except quiz results and progress)
         try {
           await txn.delete('kuis');
           await txn.delete('pelajaran');
@@ -291,6 +440,9 @@ class DatabaseHelper {
                 
                 print('    ✅ Processed ${pelajaran.kuis.length} kuis for ${pelajaran.namaPelajaran}');
                 
+                // Update or create progress for this pelajaran
+                await _updatePelajaranProgress(txn, pelajaran.idPelajaran, pelajaran.kuis.length);
+                
               } catch (pelajaranError) {
                 pelajaranErrors++;
                 print('  ❌ Error saving pelajaran ${pelajaran.idPelajaran}: $pelajaranError');
@@ -322,10 +474,296 @@ class DatabaseHelper {
       
       print('✅ Successfully completed saveAllData operation');
       
+      // Clean up orphaned quiz results after data sync
+      await _cleanupOrphanedQuizResults();
+      
     } catch (error, stackTrace) {
       print('🚨 Critical error in saveAllData: $error');
       print('🔍 Stack trace: $stackTrace');
       throw Exception('Failed to save data to database: $error');
+    }
+  }
+
+  Future<void> _updatePelajaranProgress(Transaction txn, String idPelajaran, int totalKuis) async {
+    try {
+      // Check if progress already exists
+      final existing = await txn.query(
+        'pelajaran_progress',
+        where: 'idPelajaran = ?',
+        whereArgs: [idPelajaran],
+      );
+
+      if (existing.isNotEmpty) {
+        // Update existing progress with new total kuis count
+        await txn.update(
+          'pelajaran_progress',
+          {'totalKuis': totalKuis},
+          where: 'idPelajaran = ?',
+          whereArgs: [idPelajaran],
+        );
+      } else {
+        // Create new progress record
+        await txn.insert(
+          'pelajaran_progress',
+          {
+            'idPelajaran': idPelajaran,
+            'totalKuis': totalKuis,
+            'completedKuis': 0,
+            'correctAnswers': 0,
+            'score': 0.0,
+            'lastAttemptAt': null,
+            'isCompleted': 0,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    } catch (e) {
+      print('❌ Error updating progress for $idPelajaran: $e');
+    }
+  }
+
+  // Method to clean up orphaned quiz results after sync
+  Future<void> _cleanupOrphanedQuizResults() async {
+    try {
+      print('🧹 Cleaning up orphaned quiz results...');
+      final db = await database;
+      
+      await db.transaction((txn) async {
+        // Delete quiz results where the kuis no longer exists
+        final deletedResults = await txn.rawDelete('''
+          DELETE FROM quiz_results 
+          WHERE idKuis NOT IN (SELECT idKuis FROM kuis)
+        ''');
+        
+        // Delete progress for pelajaran that no longer exist
+        final deletedProgress = await txn.rawDelete('''
+          DELETE FROM pelajaran_progress 
+          WHERE idPelajaran NOT IN (SELECT idPelajaran FROM pelajaran)
+        ''');
+        
+        print('🗑️ Cleaned up $deletedResults orphaned quiz results');
+        print('🗑️ Cleaned up $deletedProgress orphaned progress records');
+        
+        // Recalculate progress for all remaining pelajaran
+        final allPelajaran = await txn.query('pelajaran', columns: ['idPelajaran']);
+        for (var row in allPelajaran) {
+          final idPelajaran = row['idPelajaran'] as String;
+          await _recalculateProgressInTransaction(txn, idPelajaran);
+        }
+        
+        print('✅ Orphaned data cleanup completed');
+      });
+      
+    } catch (e) {
+      print('❌ Error during orphaned data cleanup: $e');
+      // Don't rethrow to avoid breaking the sync process
+    }
+  }
+
+  // Helper method to recalculate progress within a transaction
+  Future<void> _recalculateProgressInTransaction(Transaction txn, String idPelajaran) async {
+    try {
+      // Get total kuis count
+      final totalKuisResult = await txn.rawQuery(
+        'SELECT COUNT(*) as count FROM kuis WHERE idPelajaran = ?',
+        [idPelajaran],
+      );
+      final totalKuis = totalKuisResult.first['count'] as int;
+
+      // Get quiz results for this pelajaran
+      final results = await txn.query(
+        'quiz_results',
+        where: 'idPelajaran = ?',
+        whereArgs: [idPelajaran],
+      );
+
+      // Calculate statistics
+      final completedKuis = results.length;
+      final correctAnswers = results.where((r) => r['isCorrect'] == 1).length;
+      final score = totalKuis > 0 ? (correctAnswers / totalKuis) * 100 : 0.0;
+      final isCompleted = completedKuis >= totalKuis;
+      final lastAttemptAt = results.isNotEmpty 
+          ? results.map((r) => DateTime.parse(r['answeredAt'] as String))
+              .reduce((a, b) => a.isAfter(b) ? a : b)
+          : null;
+
+      // Update progress
+      await txn.insert(
+        'pelajaran_progress',
+        {
+          'idPelajaran': idPelajaran,
+          'totalKuis': totalKuis,
+          'completedKuis': completedKuis,
+          'correctAnswers': correctAnswers,
+          'score': score,
+          'lastAttemptAt': lastAttemptAt?.toIso8601String(),
+          'isCompleted': isCompleted ? 1 : 0,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      
+    } catch (e) {
+      print('❌ Error recalculating progress for $idPelajaran: $e');
+      // Continue with other pelajaran
+    }
+  }
+
+  // Quiz Results methods
+  Future<void> saveQuizResult(QuizResult result) async {
+    try {
+      final db = await database;
+      final resultModel = QuizResultModel.fromEntity(result);
+      
+      await db.insert(
+        'quiz_results',
+        resultModel.toJson(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+
+      // Update progress after saving result
+      await _recalculateProgress(result.idPelajaran);
+      print('✅ Quiz result saved: ${result.idKuis}');
+      
+    } catch (e) {
+      print('❌ Error saving quiz result: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<QuizResult>> getQuizResultsByPelajaran(String idPelajaran) async {
+    try {
+      final db = await database;
+      final results = await db.query(
+        'quiz_results',
+        where: 'idPelajaran = ?',
+        whereArgs: [idPelajaran],
+        orderBy: 'answeredAt DESC',
+      );
+
+      return results.map((json) => QuizResultModel.fromJson(json)).toList();
+    } catch (e) {
+      print('❌ Error getting quiz results: $e');
+      return []; // Return empty list instead of crashing
+    }
+  }
+
+  Future<QuizResult?> getQuizResult(String idKuis) async {
+    try {
+      final db = await database;
+      final results = await db.query(
+        'quiz_results',
+        where: 'idKuis = ?',
+        whereArgs: [idKuis],
+        limit: 1,
+      );
+
+      if (results.isNotEmpty) {
+        return QuizResultModel.fromJson(results.first);
+      }
+      return null;
+    } catch (e) {
+      print('❌ Error getting quiz result: $e');
+      return null;
+    }
+  }
+
+  Future<void> resetPelajaranProgress(String idPelajaran) async {
+    final db = await database;
+    
+    await db.transaction((txn) async {
+      // Delete all quiz results for this pelajaran
+      await txn.delete(
+        'quiz_results',
+        where: 'idPelajaran = ?',
+        whereArgs: [idPelajaran],
+      );
+
+      // Reset progress
+      await txn.update(
+        'pelajaran_progress',
+        {
+          'completedKuis': 0,
+          'correctAnswers': 0,
+          'score': 0.0,
+          'lastAttemptAt': null,
+          'isCompleted': 0,
+        },
+        where: 'idPelajaran = ?',
+        whereArgs: [idPelajaran],
+      );
+    });
+
+    print('✅ Reset progress for pelajaran: $idPelajaran');
+  }
+
+  Future<PelajaranProgress?> getPelajaranProgress(String idPelajaran) async {
+    try {
+      final db = await database;
+      final results = await db.query(
+        'pelajaran_progress',
+        where: 'idPelajaran = ?',
+        whereArgs: [idPelajaran],
+        limit: 1,
+      );
+
+      if (results.isNotEmpty) {
+        return PelajaranProgressModel.fromJson(results.first);
+      }
+      return null;
+    } catch (e) {
+      print('❌ Error getting pelajaran progress: $e');
+      return null;
+    }
+  }
+
+  Future<void> _recalculateProgress(String idPelajaran) async {
+    try {
+      final db = await database;
+      
+      // Get total kuis count
+      final totalKuisResult = await db.rawQuery(
+        'SELECT COUNT(*) as count FROM kuis WHERE idPelajaran = ?',
+        [idPelajaran],
+      );
+      final totalKuis = totalKuisResult.first['count'] as int;
+
+      // Get quiz results for this pelajaran
+      final results = await db.query(
+        'quiz_results',
+        where: 'idPelajaran = ?',
+        whereArgs: [idPelajaran],
+      );
+
+      // Calculate statistics
+      final completedKuis = results.length;
+      final correctAnswers = results.where((r) => r['isCorrect'] == 1).length;
+      final score = totalKuis > 0 ? (correctAnswers / totalKuis) * 100 : 0.0;
+      final isCompleted = completedKuis >= totalKuis;
+      final lastAttemptAt = results.isNotEmpty 
+          ? results.map((r) => DateTime.parse(r['answeredAt'] as String))
+              .reduce((a, b) => a.isAfter(b) ? a : b)
+          : null;
+
+      // Update progress
+      await db.insert(
+        'pelajaran_progress',
+        {
+          'idPelajaran': idPelajaran,
+          'totalKuis': totalKuis,
+          'completedKuis': completedKuis,
+          'correctAnswers': correctAnswers,
+          'score': score,
+          'lastAttemptAt': lastAttemptAt?.toIso8601String(),
+          'isCompleted': isCompleted ? 1 : 0,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      
+      print('✅ Progress recalculated for $idPelajaran: $completedKuis/$totalKuis (${score.toStringAsFixed(1)}%)');
+      
+    } catch (e) {
+      print('❌ Error recalculating progress for $idPelajaran: $e');
+      // Don't rethrow to avoid breaking the quiz save operation
     }
   }
 }

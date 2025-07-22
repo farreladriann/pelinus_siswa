@@ -2,9 +2,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/pelajaran.dart';
+import '../../domain/entities/quiz_result.dart';
 import '../providers/pdf_provider.dart';
+import '../providers/quiz_provider.dart';
 import '../widgets/pelinus_app_bar.dart';
 import 'pdf_viewer_page.dart';
+import 'quiz_page.dart';
 
 class PelajaranDetailPage extends ConsumerStatefulWidget {
   final Pelajaran pelajaran;
@@ -22,8 +25,20 @@ class PelajaranDetailPage extends ConsumerStatefulWidget {
 
 class _PelajaranDetailPageState extends ConsumerState<PelajaranDetailPage> {
   @override
+  void initState() {
+    super.initState();
+    // Load quiz progress when page opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(quizProvider.notifier).loadPelajaranProgress(widget.pelajaran.idPelajaran);
+      ref.read(quizProvider.notifier).loadQuizResults(widget.pelajaran.idPelajaran);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final pdfState = ref.watch(pdfProvider);
+    final quizState = ref.watch(quizProvider);
+    final progress = quizState.progressMap[widget.pelajaran.idPelajaran];
 
     return Scaffold(
       appBar: PelinusAppBar(
@@ -59,6 +74,16 @@ class _PelajaranDetailPageState extends ConsumerState<PelajaranDetailPage> {
                             '${widget.pelajaran.kuis.length} kuis tersedia',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
+                          if (progress != null) ...[
+                            SizedBox(height: 4),
+                            Text(
+                              'Progress: ${progress.completedKuis}/${progress.totalKuis} kuis (${progress.score.toStringAsFixed(1)}%)',
+                              style: TextStyle(
+                                color: progress.isCompleted ? Colors.green : Colors.orange,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -88,6 +113,61 @@ class _PelajaranDetailPageState extends ConsumerState<PelajaranDetailPage> {
                     ),
                   ),
                 ),
+                
+                SizedBox(height: 12),
+                
+                // Tombol Mulai Kuis
+                if (widget.pelajaran.kuis.isNotEmpty)
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _startQuiz(),
+                      icon: Icon(Icons.quiz),
+                      label: Text(progress != null && progress.completedKuis > 0 
+                          ? 'Lanjutkan Kuis' 
+                          : 'Mulai Kuis'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        padding: EdgeInsets.all(16),
+                      ),
+                    ),
+                  ),
+                
+                SizedBox(height: 12),
+                
+                // Tombol Reset Progress (hanya tampil jika ada progress)
+                if (progress != null && progress.completedKuis > 0)
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: quizState.isLoading ? null : () => _showResetDialog(),
+                      icon: Icon(Icons.refresh, color: Colors.red),
+                      label: Text(
+                        'Reset Semua Kuis',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Colors.red),
+                        padding: EdgeInsets.all(16),
+                      ),
+                    ),
+                  ),
+
+                SizedBox(height: 12),
+
+                // Tombol Lihat Detail Progress (jika ada progress)
+                if (progress != null)
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _showProgressDetail(progress),
+                      icon: Icon(Icons.analytics_outlined),
+                      label: Text('Lihat Detail Progress'),
+                      style: OutlinedButton.styleFrom(
+                        padding: EdgeInsets.all(16),
+                      ),
+                    ),
+                  ),
 
                 if (pdfState.error != null) ...[
                   SizedBox(height: 8),
@@ -117,186 +197,13 @@ class _PelajaranDetailPageState extends ConsumerState<PelajaranDetailPage> {
             ),
           ),
 
-          // Divider
+          // Divider untuk pemisah visual
           Divider(),
 
-          // Kuis section
+          // Spacer untuk mengisi ruang kosong
           Expanded(
-            child: widget.pelajaran.kuis.isEmpty
-                ? _buildEmptyKuisState(context)
-                : _buildKuisList(context),
+            child: Container(),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyKuisState(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.quiz_outlined,
-            size: 64,
-            color: Colors.grey,
-          ),
-          SizedBox(height: 16),
-          Text(
-            'Belum ada kuis',
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Kuis akan muncul setelah admin menambahkannya',
-            style: TextStyle(color: Colors.grey),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildKuisList(BuildContext context) {
-    return Column(
-      children: [
-        // Kuis header
-        Container(
-          width: double.infinity,
-          padding: EdgeInsets.all(16),
-          child: Text(
-            'Daftar Kuis',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-        ),
-
-        // Kuis list
-        Expanded(
-          child: ListView.builder(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            itemCount: widget.pelajaran.kuis.length,
-            itemBuilder: (context, index) {
-              final kuis = widget.pelajaran.kuis[index];
-              return Card(
-                margin: EdgeInsets.only(bottom: 12),
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header kuis
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 16,
-                            backgroundColor: Theme.of(context).colorScheme.primary,
-                            child: Text(
-                              '${kuis.nomorKuis}',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Kuis #${kuis.nomorKuis}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 12),
-
-                      // Soal
-                      Text(
-                        kuis.soal,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      SizedBox(height: 12),
-
-                      // Opsi jawaban
-                      _buildOption(context, 'A', kuis.opsiA, kuis.opsiJawaban == 'A'),
-                      _buildOption(context, 'B', kuis.opsiB, kuis.opsiJawaban == 'B'),
-                      _buildOption(context, 'C', kuis.opsiC, kuis.opsiJawaban == 'C'),
-                      _buildOption(context, 'D', kuis.opsiD, kuis.opsiJawaban == 'D'),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildOption(BuildContext context, String label, String text, bool isCorrect) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 8),
-      padding: EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isCorrect 
-            ? Colors.green.shade100 
-            : Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isCorrect 
-              ? Colors.green.shade300 
-              : Colors.grey.shade300,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isCorrect 
-                  ? Colors.green 
-                  : Colors.grey.shade400,
-            ),
-            child: Center(
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ),
-          SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontSize: 14,
-                color: isCorrect 
-                    ? Colors.green.shade800 
-                    : Colors.black87,
-              ),
-            ),
-          ),
-          if (isCorrect)
-            Icon(
-              Icons.check_circle,
-              color: Colors.green,
-              size: 20,
-            ),
         ],
       ),
     );
@@ -324,5 +231,239 @@ class _PelajaranDetailPageState extends ConsumerState<PelajaranDetailPage> {
       );
     }
     // Silent error handling - tidak menampilkan error SnackBar
+  }
+
+  void _showProgressDetail(PelajaranProgress progress) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.analytics_outlined, color: Theme.of(context).primaryColor),
+            SizedBox(width: 8),
+            Text('Detail Progress'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildProgressItem('Total Kuis', '${progress.totalKuis} soal'),
+            _buildProgressItem('Kuis Diselesaikan', '${progress.completedKuis}/${progress.totalKuis}'),
+            _buildProgressItem('Jawaban Benar', '${progress.correctAnswers}/${progress.completedKuis}'),
+            _buildProgressItem('Skor Akhir', '${progress.score.toStringAsFixed(1)}%'),
+            _buildProgressItem('Status', progress.isCompleted ? 'Selesai' : 'Belum Selesai'),
+            if (progress.lastAttemptAt != null)
+              _buildProgressItem(
+                'Terakhir Mengerjakan',
+                _formatDateTime(progress.lastAttemptAt!),
+              ),
+            SizedBox(height: 16),
+            LinearProgressIndicator(
+              value: progress.totalKuis > 0 ? progress.completedKuis / progress.totalKuis : 0,
+              backgroundColor: Colors.grey.shade300,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                progress.isCompleted ? Colors.green : Theme.of(context).primaryColor,
+              ),
+            ),
+            SizedBox(height: 8),
+            Center(
+              child: Text(
+                '${((progress.completedKuis / progress.totalKuis) * 100).toStringAsFixed(1)}% selesai',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          if (progress.completedKuis > 0)
+            TextButton.icon(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _showResetDialog();
+              },
+              icon: Icon(Icons.refresh, color: Colors.red),
+              label: Text('Reset', style: TextStyle(color: Colors.red)),
+            ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Tutup'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _startQuiz();
+            },
+            child: Text(progress.completedKuis > 0 ? 'Lanjutkan' : 'Mulai Kuis'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProgressItem(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade700,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+    
+    if (difference.inDays > 0) {
+      return '${difference.inDays} hari yang lalu';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} jam yang lalu';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} menit yang lalu';
+    } else {
+      return 'Baru saja';
+    }
+  }
+
+  void _startQuiz() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => QuizPage(
+          pelajaran: widget.pelajaran,
+          kelasNomor: widget.kelasNomor,
+        ),
+      ),
+    );
+  }
+
+  void _showResetDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.warning, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('Reset Progress'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Apakah Anda yakin ingin mereset semua progress kuis untuk mata pelajaran ini?',
+              style: TextStyle(fontSize: 16),
+            ),
+            SizedBox(height: 12),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red.shade200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Tindakan ini akan:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red.shade800,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text('• Menghapus semua jawaban kuis'),
+                  Text('• Mereset skor menjadi 0'),
+                  Text('• Mereset progress menjadi 0'),
+                  SizedBox(height: 8),
+                  Text(
+                    'Tindakan ini tidak dapat dibatalkan!',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red.shade800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _performReset();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: Text('Reset'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _performReset() async {
+    try {
+      await ref.read(quizProvider.notifier).resetProgress(widget.pelajaran.idPelajaran);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Progress berhasil direset'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Gagal mereset progress'),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 }

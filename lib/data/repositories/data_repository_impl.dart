@@ -3,6 +3,7 @@ import 'dart:io';
 import '../../domain/repositories/data_repository.dart';
 import '../../domain/entities/kelas.dart';
 import '../../domain/entities/pdf_file.dart';
+import '../../domain/entities/quiz_result.dart';
 import '../datasources/local/database_helper.dart';
 import '../datasources/remote/api_service.dart';
 import '../models/pdf_file_model.dart';
@@ -142,6 +143,51 @@ class DataRepositoryImpl implements DataRepository {
       await databaseHelper.saveAllData(kelasList);
     } catch (e) {
       throw CacheException('Failed to save cached data: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<void> saveQuizResult(QuizResult result) async {
+    try {
+      await databaseHelper.saveQuizResult(result);
+    } catch (e) {
+      throw CacheException('Failed to save quiz result: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<List<QuizResult>> getQuizResultsByPelajaran(String idPelajaran) async {
+    try {
+      return await databaseHelper.getQuizResultsByPelajaran(idPelajaran);
+    } catch (e) {
+      throw CacheException('Failed to get quiz results: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<QuizResult?> getQuizResult(String idKuis) async {
+    try {
+      return await databaseHelper.getQuizResult(idKuis);
+    } catch (e) {
+      throw CacheException('Failed to get quiz result: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<void> resetPelajaranProgress(String idPelajaran) async {
+    try {
+      await databaseHelper.resetPelajaranProgress(idPelajaran);
+    } catch (e) {
+      throw CacheException('Failed to reset progress: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<PelajaranProgress?> getPelajaranProgress(String idPelajaran) async {
+    try {
+      return await databaseHelper.getPelajaranProgress(idPelajaran);
+    } catch (e) {
+      throw CacheException('Failed to get progress: ${e.toString()}');
     }
   }
 }

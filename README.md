@@ -1,6 +1,10 @@
 # 📱 Pelinus Siswa - Mobile App
 
 <p align="center">
+  <img src="assets/images/play_store_512.png" width="150" alt="Pelinus Logo"/>
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter"/>
   <img src="https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white" alt="Dart"/>
   <img src="https://img.shields.io/badge/Riverpod-00C7B7?style=for-the-badge&logo=riverpod&logoColor=white" alt="Riverpod"/>
@@ -8,9 +12,13 @@
   <img src="https://img.shields.io/badge/iOS-000000? style=for-the-badge&logo=ios&logoColor=white" alt="iOS"/>
 </p>
 
+<p align="center">
+  <b>Platform Pembelajaran Digital untuk Siswa Pelinus Mengajar</b>
+</p>
+
 ## 📖 Deskripsi
 
-**Pelinus Siswa** adalah aplikasi mobile cross-platform yang dibangun menggunakan **Flutter** untuk para siswa dalam program **Pelinus Mengajar**. Aplikasi ini memungkinkan siswa untuk mengakses materi pembelajaran, melihat PDF, dan belajar secara offline.
+**Pelinus Siswa** adalah aplikasi mobile cross-platform yang dibangun menggunakan **Flutter** untuk para siswa dalam program **Pelinus Mengajar**. Aplikasi ini memungkinkan siswa untuk mengakses materi pembelajaran, melihat PDF, mengerjakan kuis, dan belajar secara offline.
 
 ## 🔗 Related Repository
 
@@ -18,14 +26,40 @@
 |------------|-----------|
 | [pelinus](https://github.com/farreladriann/pelinus) | Backend API (Express.js + TypeScript) |
 
+## 📱 Screenshots
+
+<p align="center">
+  <img src="assets/images/home.jpeg" width="180" alt="Home Screen"/>
+  <img src="assets/images/subjects.jpeg" width="180" alt="Daftar Mata Pelajaran"/>
+  <img src="assets/images/detail.jpeg" width="180" alt="Detail Materi"/>
+  <img src="assets/images/quiz.jpeg" width="180" alt="Quiz"/>
+</p>
+
+<p align="center">
+  <img src="assets/images/stats.jpeg" width="180" alt="Statistik Kuis"/>
+  <img src="assets/images/detailprogress.jpeg" width="180" alt="Detail Progress"/>
+</p>
+
+### 🖼️ Penjelasan Screenshots
+
+| Screenshot | Halaman | Deskripsi |
+|------------|---------|-----------|
+| **Home** | Dashboard | Ringkasan total kelas, mata pelajaran, kuis selesai, dan progress per kelas |
+| **Subjects** | Mata Pelajaran | Daftar mata pelajaran dengan progress tracking dan skor |
+| **Detail** | Detail Materi | Akses materi PDF, mulai kuis, dan lihat detail progress |
+| **Quiz** | Kuis | Interface mengerjakan kuis |
+| **Stats** | Statistik | Statistik keseluruhan:  mata pelajaran selesai, total kuis, jawaban benar, rata-rata skor |
+| **Detail Progress** | Progress | Detail progress pembelajaran per kelas |
+
 ## ✨ Fitur Utama
 
-- 📚 Akses materi pembelajaran
-- 📄 PDF Viewer built-in
+- 📚 **Akses Materi Pembelajaran** - Baca materi dalam format PDF
+- 📝 **Sistem Kuis** - Kerjakan kuis untuk menguji pemahaman
+- 📊 **Tracking Progress** - Pantau progress belajar per mata pelajaran
+- 📈 **Statistik Lengkap** - Lihat statistik keseluruhan pencapaian
 - 📶 **Offline Mode** - Belajar tanpa koneksi internet
-- 🔄 Sinkronisasi data otomatis
-- 📱 Cross-platform (Android & iOS)
-- 🎨 UI/UX yang user-friendly
+- 🔄 **Sinkronisasi Otomatis** - Data tersinkron saat online
+- 📱 **Cross-platform** - Tersedia untuk Android & iOS
 
 ## 🛠️ Tech Stack
 
@@ -100,10 +134,6 @@ flutter build appbundle --release
 flutter build ios --release
 ```
 
-## 📱 Screenshots
-
-*Coming soon*
-
 ## 📋 Dependencies Utama
 
 ```yaml
@@ -114,11 +144,16 @@ dependencies:
   flutter_pdfview: ^1.3.2      # PDF viewer
   connectivity_plus: ^5.0.2    # Network connectivity
   permission_handler: ^11.1.0  # Permissions
+  intl: ^0.19.0                # Internationalization
 ```
 
 ## 🔧 Konfigurasi
 
-Pastikan untuk mengatur base URL API di konfigurasi aplikasi sesuai dengan backend yang digunakan.
+Pastikan untuk mengatur base URL API di konfigurasi aplikasi sesuai dengan backend: 
+
+```
+Backend URL: https://pelinus. vercel.app
+```
 
 ## 👨‍💻 Author
 
@@ -127,4 +162,6 @@ Pastikan untuk mengatur base URL API di konfigurasi aplikasi sesuai dengan backe
 
 ---
 
-⭐ Jika project ini membantu, jangan lupa berikan star!
+<p align="center">
+  ⭐ Jika project ini membantu, jangan lupa berikan star! 
+</p>
